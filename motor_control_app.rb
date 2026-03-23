@@ -266,6 +266,27 @@ get '/api/stepper/status' do
   })
 end
 
+get '/api/stepper/increment' do
+  new_position = [$stepper_position + $stepper_increment, MAX_POSITION].min
+  redirect "/api/stepper/#{new_position}"
+end
+
+get '/api/stepper/decrement' do
+  new_position = [$stepper_position - $stepper_increment, MIN_POSITION].max
+  redirect "/api/stepper/#{new_position}"
+end
+
+get '/api/stepper/settings/increment/:value' do
+  value = params[:value].to_i
+  $stepper_increment = [[value, 1].max, MAX_POSITION].min
+
+  json({
+    success: true,
+    increment: $stepper_increment
+  })
+end
+
+# Generic position route - MUST be last to avoid matching specific routes
 get '/api/stepper/:position' do
   position = params[:position].to_i
 
@@ -288,26 +309,6 @@ get '/api/stepper/:position' do
       message: 'Failed to move stepper'
     })
   end
-end
-
-get '/api/stepper/increment' do
-  new_position = [$stepper_position + $stepper_increment, MAX_POSITION].min
-  redirect "/api/stepper/#{new_position}"
-end
-
-get '/api/stepper/decrement' do
-  new_position = [$stepper_position - $stepper_increment, MIN_POSITION].max
-  redirect "/api/stepper/#{new_position}"
-end
-
-get '/api/stepper/settings/increment/:value' do
-  value = params[:value].to_i
-  $stepper_increment = [[value, 1].max, MAX_POSITION].min
-
-  json({
-    success: true,
-    increment: $stepper_increment
-  })
 end
 
 # ========== ROUTINE ENDPOINTS ==========
