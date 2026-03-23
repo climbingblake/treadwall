@@ -22,9 +22,53 @@ STEPPER_PUL_PIN = CONFIG['gpio']['stepper_pul_pin']
 MIN_POSITION = CONFIG['stepper']['min_position']
 MAX_POSITION = CONFIG['stepper']['max_position']
 
+# State file for persistence
+STATE_FILE = File.join(File.dirname(__FILE__), 'motor_state.json')
+
 # Global state - Stepper
 $stepper_position = 0
 $stepper_increment = CONFIG['stepper']['step_increment']
+
+# ========== PERSISTENCE FUNCTIONS ==========
+
+# Save current motor position to file
+def save_position
+  begin
+    state = {
+      position: $stepper_position,
+      timestamp: Time.now.to_i
+    }
+    File.write(STATE_FILE, JSON.pretty_generate(state))
+    puts "✓ Position saved: #{$stepper_position}"
+  rescue => e
+    puts "⚠ Warning: Failed to save position: #{e.message}"
+  end
+end
+
+# Load motor position from file
+def load_position
+  if File.exist?(STATE_FILE)
+    begin
+      state = JSON.parse(File.read(STATE_FILE))
+      saved_position = state['position'].to_i
+
+      # Clamp to valid range in case config changed
+      saved_position = [[saved_position, MIN_POSITION].max, MAX_POSITION].min
+
+      puts "✓ Restored position: #{saved_position}"
+      return saved_position
+    rescue => e
+      puts "⚠ Warning: Failed to load position: #{e.message}"
+      return 0
+    end
+  else
+    puts "ℹ No saved position found, starting at 0"
+    return 0
+  end
+end
+
+# Initialize position from saved state
+$stepper_position = load_position
 
 # Global state - Routines
 $routine_thread = nil
@@ -74,6 +118,7 @@ def set_stepper_position(target_position)
     if exit_status == 0
       # Python script returns the new position
       $stepper_position = result.strip.to_i
+      save_position  # Persist position after successful movement
       true
     else
       puts "Stepper control error: #{result}"
@@ -237,6 +282,9 @@ get '/api/status' do
         increment: '/api/stepper/increment',
         decrement: '/api/stepper/decrement',
         set_increment: '/api/stepper/settings/increment/<value>',
+        reset: 'POST /api/stepper/reset',
+        calibrate_increment: 'POST /api/stepper/calibrate/increment',
+        calibrate_decrement: 'POST /api/stepper/calibrate/decrement',
         status: '/api/stepper/status'
       },
       routines: {
@@ -284,6 +332,61 @@ get '/api/stepper/settings/increment/:value' do
     success: true,
     increment: $stepper_increment
   })
+end
+
+post '/api/stepper/reset' do
+  # Reset the saved position to 0 without moving the motor
+  # This allows users to calibrate where "zero" is
+  $stepper_position = 0
+  save_position
+
+  json({
+    success: true,
+    position: $stepper_position,
+    message: 'Position reset to 0 (calibrated)'
+  })
+end
+
+# DANGER: Unconstrained increment for calibration (bypasses min/max)
+post '/api/stepper/calibrate/increment' do
+  new_position = $stepper_position + 100
+  success = set_stepper_position(new_position)
+
+  if success
+    json({
+      success: true,
+      position: $stepper_position,
+      message: "Calibration: Moved to position #{$stepper_position}"
+    })
+  else
+    status 500
+    json({
+      success: false,
+      position: $stepper_position,
+      message: 'Failed to move stepper'
+    })
+  end
+end
+
+# DANGER: Unconstrained decrement for calibration (bypasses min/max)
+post '/api/stepper/calibrate/decrement' do
+  new_position = $stepper_position - 100
+  success = set_stepper_position(new_position)
+
+  if success
+    json({
+      success: true,
+      position: $stepper_position,
+      message: "Calibration: Moved to position #{$stepper_position}"
+    })
+  else
+    status 500
+    json({
+      success: false,
+      position: $stepper_position,
+      message: 'Failed to move stepper'
+    })
+  end
 end
 
 # Generic position route - MUST be last to avoid matching specific routes
@@ -526,6 +629,9 @@ at_exit do
       puts "Stopping routine before exit..."
       stop_routine(false) # Don't return to MIN_POSITION on exit
     end
+
+    # Save final position before exit
+    save_position
 
     puts "Cleanup completed"
   rescue => e

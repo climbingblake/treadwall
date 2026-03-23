@@ -104,6 +104,63 @@ function setStepperPositionValue(position) {
   setStepperPosition();
 }
 
+// Reset position to 0 (calibration)
+async function resetPosition() {
+  try {
+    const response = await fetch(`${API_BASE}/stepper/reset`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      await fetchStepperStatus();
+      // Update slider and input to reflect new position
+      document.getElementById('stepper-slider').value = 0;
+      document.getElementById('stepper-input').value = 0;
+    } else {
+      showError('stepper-error', data.message);
+    }
+  } catch (error) {
+    showError('stepper-error', 'Failed to reset position');
+  }
+}
+
+// DANGER: Calibration increment (bypasses min/max)
+async function calibrateIncrement() {
+  try {
+    const response = await fetch(`${API_BASE}/stepper/calibrate/increment`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      await fetchStepperStatus();
+    } else {
+      showError('stepper-error', data.message);
+    }
+  } catch (error) {
+    showError('stepper-error', 'Failed to calibrate increment');
+  }
+}
+
+// DANGER: Calibration decrement (bypasses min/max)
+async function calibrateDecrement() {
+  try {
+    const response = await fetch(`${API_BASE}/stepper/calibrate/decrement`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      await fetchStepperStatus();
+    } else {
+      showError('stepper-error', data.message);
+    }
+  } catch (error) {
+    showError('stepper-error', 'Failed to calibrate decrement');
+  }
+}
+
 // Generate preset buttons dynamically from MIN to MAX based on increment
 function generateStepperPresets() {
   var incrementInput = document.getElementById('stepper-increment-input');
