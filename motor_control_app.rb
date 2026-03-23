@@ -106,13 +106,15 @@ puts "✓ Loaded #{$routines.length} training routines"
 
 # ========== STEPPER FUNCTIONS ==========
 
-def set_stepper_position(target_position)
+def set_stepper_position(target_position, bypass_limits: false)
   # Call Python script for precise timing
   script_path = File.join(File.dirname(__FILE__), 'stepper_control.py')
 
   begin
     # Call Python script with target and current position
-    result = `sudo python3 #{script_path} #{target_position} #{$stepper_position} 2>&1`
+    # Optional bypass_limits flag for calibration (DANGER!)
+    bypass_arg = bypass_limits ? ' true' : ''
+    result = `sudo python3 #{script_path} #{target_position} #{$stepper_position}#{bypass_arg} 2>&1`
     exit_status = $?.exitstatus
 
     if exit_status == 0
@@ -349,8 +351,8 @@ end
 
 # DANGER: Unconstrained increment for calibration (bypasses min/max)
 post '/api/stepper/calibrate/increment' do
-  new_position = $stepper_position + 100
-  success = set_stepper_position(new_position)
+  new_position = $stepper_position + 1000
+  success = set_stepper_position(new_position, bypass_limits: true)
 
   if success
     json({
@@ -370,8 +372,8 @@ end
 
 # DANGER: Unconstrained decrement for calibration (bypasses min/max)
 post '/api/stepper/calibrate/decrement' do
-  new_position = $stepper_position - 100
-  success = set_stepper_position(new_position)
+  new_position = $stepper_position - 1000
+  success = set_stepper_position(new_position, bypass_limits: true)
 
   if success
     json({

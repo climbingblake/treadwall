@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Stepper motor control script - called from Sinatra
-Usage: stepper_control.py <target_position> <current_position>
+Usage: stepper_control.py <target_position> <current_position> [bypass_limits]
+Optional bypass_limits: set to 'true' to disable min/max clamping (DANGER!)
 """
 
 import sys
@@ -49,17 +50,19 @@ def move_to_position(target, current):
     step(steps, direction)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print("Usage: stepper_control.py <target_position> <current_position>")
+    if len(sys.argv) < 3:
+        print("Usage: stepper_control.py <target_position> <current_position> [bypass_limits]")
         sys.exit(1)
 
     try:
         target_position = int(sys.argv[1])
         current_position = int(sys.argv[2])
+        bypass_limits = len(sys.argv) > 3 and sys.argv[3].lower() == 'true'
 
-        # Clamp positions to configured limits
-        target_position = max(MIN_POSITION, min(MAX_POSITION, target_position))
-        current_position = max(MIN_POSITION, min(MAX_POSITION, current_position))
+        # Clamp positions to configured limits (unless bypassing for calibration)
+        if not bypass_limits:
+            target_position = max(MIN_POSITION, min(MAX_POSITION, target_position))
+            current_position = max(MIN_POSITION, min(MAX_POSITION, current_position))
 
         # Setup GPIO
         GPIO.setwarnings(False)
