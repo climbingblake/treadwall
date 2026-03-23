@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Motor Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1a1a1a;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --text-tertiary: #666666;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-blue-glow: rgba(59, 130, 246, 0.3);
+      --accent-green-glow: rgba(16, 185, 129, 0.3);
+      --border: rgba(255, 255, 255, 0.08);
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --transition: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    header {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 10, 10, 0.8);
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    main {
+      padding: 64px 0;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+      gap: 48px;
+      margin-bottom: 64px;
+    }
+
+    @media (max-width: 1280px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .control-section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      transition: all 0.3s var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .control-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      opacity: 0;
+      transition: opacity 0.3s var(--transition);
+    }
+
+    .control-section:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .control-section:hover::before {
+      opacity: 1;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: relative;
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .indicator.blue {
+      background: var(--accent-blue);
+      box-shadow: 0 0 20px var(--accent-blue-glow);
+    }
+
+    .indicator.green {
+      background: var(--accent-green);
+      box-shadow: 0 0 20px var(--accent-green-glow);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+    }
+
+    .motor-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 8px;
+    }
+
+    .motor-subtitle {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      margin-bottom: 32px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      padding: 32px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      margin-bottom: 40px;
+      border: 1px solid var(--border);
+    }
+
+    .status-item label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .status-value {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 4px;
+      font-feature-settings: 'tnum';
+    }
+
+    .status-detail {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .control-group {
+      margin-bottom: 32px;
+    }
+
+    .control-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-secondary);
+    }
+
+    .slider-group {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      outline: none;
+      -webkit-appearance: none;
+      border: 1px solid var(--border);
+      transition: all 0.2s var(--transition);
+    }
+
+    input[type="range"]:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      cursor: pointer;
+      transition: all 0.2s var(--transition);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s var(--transition);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    }
+
+    input[type="number"] {
+      width: 120px;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 600;
+      font-feature-settings: 'tnum';
+      transition: all 0.2s var(--transition);
+    }
+
+    input[type="number"]:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px var(--accent-blue-glow);
+    }
+
+    button {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    button:active::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-secondary);
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .button-group button {
+      flex: 1;
+    }
+
+    .preset-buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    #stepper-presets {
+      grid-template-columns: repeat(5, 1fr);
+    }
+
+    .error {
+      padding: 16px 20px;
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 24px;
+      display: none;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .error.show {
+      display: block;
+      animation: slideIn 0.3s var(--transition);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .tech-info {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-family: 'Courier New', monospace;
+    }
+
+    .comparison {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      transition: all 0.3s var(--transition);
+    }
+
+    .comparison:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .comparison h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 32px;
+      letter-spacing: -0.01em;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 48px;
+    }
+
+    @media (max-width: 768px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comparison h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .comparison h4.blue { color: var(--accent-blue); }
+    .comparison h4.green { color: var(--accent-green); }
+
+    .comparison ul {
+      list-style: none;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .comparison li {
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .comparison li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--text-tertiary);
+    }
+
+    footer {
+      text-align: center;
+      padding: 48px 32px;
+      color: var(--text-tertiary);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 64px;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 0 20px; }
+      h1 { font-size: 28px; }
+      .controls-grid { grid-template-columns: 1fr; gap: 32px; }
+      .status-grid { grid-template-columns: 1fr; }
+      .preset-buttons { grid-template-columns: repeat(3, 1fr); }
+      #stepper-presets { grid-template-columns: repeat(3, 1fr); }
+      .control-section { padding: 24px; }
+    }
+
+    /* Toggle button styles */
+    .toggle-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 48px;
+    }
+
+    .toggle-button {
+      padding: 12px 24px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s var(--transition);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .toggle-button:hover {
+      background: var(--bg-tertiary);
+      border-color: rgba(255, 255, 255, 0.16);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Hide routine div by default */
+    #routine-div {
+      display: none;
+    }
+
+    /* Routine-specific styles */
+    .routine-select {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s var(--transition);
+    }
+
+    .routine-select:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .routine-select:focus {
+      outline: none;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px var(--accent-green-glow);
+    }
+
+    .routine-details {
+      margin-top: 24px;
+    }
+
+    .routine-preview {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .routine-preview h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .routine-description {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .routine-stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .routine-stats span {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .routine-stats strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .routine-steps-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-preview {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      transition: all 0.2s var(--transition);
+    }
+
+    .step-preview:hover {
+      background: var(--bg-primary);
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .step-info {
+      flex: 1;
+    }
+
+    .step-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .step-detail {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    /* Progress timeline */
+    .routine-timeline {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 16px 0;
+    }
+
+    .timeline-step {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      transition: all 0.3s var(--transition);
+      position: relative;
+    }
+
+    .timeline-step.completed {
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    }
+
+    .timeline-step.active {
+      background: var(--accent-green);
+      animation: pulse-timeline 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-timeline {
+      0%, 100% {
+        opacity: 1;
+        transform: scaleY(1);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scaleY(1.2);
+      }
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+      transition: width 0.5s ease-out;
+      border-radius: 2px;
+    }
+
+    /* Danger button (STOP) */
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      font-weight: 700;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-danger:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .routine-buttons {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 2fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .routine-buttons {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="controls-grid">
+      <!-- Stepper Control -->
+      <div id="stepper-div">
+        <div class="control-section" id="stepper-control">
+
+          <div class="error" id="stepper-error"></div>
+
+          <div class="status-grid">
+            <div class="status-item">
+              <label>Position</label>
+              <div class="status-value"><span id="stepper-current-position">0</span></div>
+              <div class="status-detail"><span id="stepper-max-position">30000</span> steps max</div>
+            </div>
+            <div class="status-item">
+              <label>Progress</label>
+              <div class="status-value"><span id="stepper-progress">0</span>%</div>
+              <div class="status-detail">Step: <span id="stepper-increment-display">100</span></div>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Set Position</label>
+            <div class="slider-group">
+              <input type="range" id="stepper-slider" min="-30000" max="30000" value="0" step="1">
+              <input type="number" id="stepper-input" min="-30000" max="30000" value="0">
+              <button class="btn-primary" onclick="setStepperPosition()">Set</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Quick Controls</label>
+            <div class="button-group">
+              <button class="btn-secondary" onclick="stepperDecrement()">← Decrement</button>
+              <button class="btn-secondary" onclick="stepperIncrement()">Increment →</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Presets (based on increment)</label>
+            <div class="preset-buttons" id="stepper-presets">
+              <!-- Dynamically generated preset buttons -->
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label">Increment Step</label>
+            <div class="slider-group">
+              <input type="number" id="stepper-increment-input" min="1" max="<%= MAX_POSITION %>" value="<%= CONFIG['stepper']['step_increment'] %>" style="flex: 1;">
+              <button class="btn-secondary" onclick="setStepperIncrement()">Update</button>
+            </div>
+          </div>
+
+          <div class="tech-info">
+            GPIO 5 (DIR) | GPIO 6 (PUL) | BCM Mode
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Routine Control -->
+    <div id="routine-div" style="display: none;">
+      <div class="section-header">
+        <div class="indicator green"></div>
+        <div class="section-title">Training Routines</div>
+      </div>
+      <div class="control-section" id="routine-control">
+        <h2 class="motor-title">Training Routines</h2>
+        <p class="motor-subtitle">Automated interval training programs</p>
+
+        <div class="error" id="routine-error"></div>
+
+        <!-- Routine Status (hidden until running) -->
+        <div class="status-grid" id="routine-status" style="display: none;">
+          <div class="status-item">
+            <label>Current Step</label>
+            <div class="status-value">
+              <span id="routine-current-step">0</span>/<span id="routine-total-steps">0</span>
+            </div>
+            <div class="status-detail" id="routine-step-label">-</div>
+          </div>
+          <div class="status-item">
+            <label>Progress</label>
+            <div class="status-value"><span id="routine-step-progress">0</span>%</div>
+            <div class="status-detail">
+              <span id="routine-step-elapsed">0</span>s / <span id="routine-step-duration">0</span>s
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Timeline -->
+        <div class="control-group" id="routine-timeline-container" style="display: none;">
+          <label class="control-label">Routine Progress</label>
+          <div class="routine-timeline" id="routine-timeline">
+            <!-- Dynamically populated -->
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" id="routine-progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Routine Selector -->
+        <div class="control-group">
+          <label class="control-label">Select Routine</label>
+          <select id="routine-selector" class="routine-select">
+            <option value="">Loading routines...</option>
+          </select>
+        </div>
+
+        <!-- Routine Preview -->
+        <div id="routine-details" class="routine-details" style="display: none;">
+          <!-- Dynamically populated routine preview -->
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="control-group">
+          <div class="button-group routine-buttons">
+            <button id="routine-start" class="btn-primary" onclick="startRoutine()">
+              Start
+            </button>
+            <button id="routine-pause" class="btn-secondary" onclick="pauseRoutine()" disabled>
+              Pause
+            </button>
+            <button id="routine-resume" class="btn-secondary" onclick="resumeRoutine()" disabled style="display: none;">
+              Resume
+            </button>
+            <button id="routine-stop" class="btn-danger" onclick="stopRoutine()">
+              STOP
+            </button>
+          </div>
+        </div>
+
+        <div class="tech-info">
+          Auto-returns to MIN_POSITION for safety
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle Button -->
+    <div class="toggle-container">
+      <button class="toggle-button" onclick="toggleMotor()">
+        Switch to <span id="toggle-text">Routines</span>
+      </button>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>API Backend: http://localhost:4567 | GPIO Mode: BCM</p>
+  </footer>
+
+  <script src="/app.js"></script>
+  <script>
+    // Toggle between stepper (manual) and routine views
+    function toggleMotor() {
+      console.log('=== TOGGLE BUTTON CLICKED ===');
+
+      var stepperDiv = document.getElementById('stepper-div');
+      var routineDiv = document.getElementById('routine-div');
+      var toggleText = document.getElementById('toggle-text');
+
+      // Toggle between views
+      if (stepperDiv.style.display === 'none') {
+        // Show stepper (manual), hide routines
+        stepperDiv.style.display = 'block';
+        routineDiv.style.display = 'none';
+        toggleText.textContent = 'Routines';
+        console.log('Switched to MANUAL view');
+      } else {
+        // Show routines, hide stepper
+        stepperDiv.style.display = 'none';
+        routineDiv.style.display = 'block';
+        toggleText.textContent = 'Manual';
+        console.log('Switched to ROUTINES view');
+      }
+    }
+  </script>
+</body>
+</html>

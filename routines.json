@@ -1,0 +1,128 @@
+{
+  "routines": [
+    {
+      "id": "motortest",
+      "name": "Test Routine",
+      "description": "just random(ish) moving around to test",
+      "steps": [
+        {
+          "position": 5000,
+          "duration": 15,
+          "label": "Warm-up"
+        },
+        {
+          "position": 10000,
+          "duration": 15,
+          "label": "Sprint 1"
+        }
+      ],
+      "options": {
+        "repeat": false,
+        "return_to_zero": true
+      }
+    },
+    {
+      "id": "beginner_interval",
+      "name": "Beginner Interval Training",
+      "description": "5-minute warmup and interval training for beginners",
+      "steps": [
+        {
+          "position": 5000,
+          "duration": 60,
+          "label": "Warm-up"
+        },
+        {
+          "position": 15000,
+          "duration": 30,
+          "label": "Sprint 1"
+        },
+        {
+          "position": 5000,
+          "duration": 45,
+          "label": "Recovery 1"
+        },
+        {
+          "position": 20000,
+          "duration": 30,
+          "label": "Sprint 2"
+        },
+        {
+          "position": 5000,
+          "duration": 45,
+          "label": "Recovery 2"
+        }
+      ],
+      "options": {
+        "repeat": false,
+        "return_to_zero": true
+      }
+    },
+    {
+      "id": "pyramid_workout",
+      "name": "Pyramid Workout",
+      "description": "Progressive increase then decrease in intensity",
+      "steps": [
+        {
+          "position": 5000,
+          "duration": 60,
+          "label": "Level 1"
+        },
+        {
+          "position": 15000,
+          "duration": 60,
+          "label": "Level 2"
+        },
+        {
+          "position": 25000,
+          "duration": 60,
+          "label": "Peak"
+        },
+        {
+          "position": 15000,
+          "duration": 60,
+          "label": "Level 2"
+        },
+        {
+          "position": 5000,
+          "duration": 60,
+          "label": "Level 1"
+        }
+      ],
+      "options": {
+        "repeat": true,
+        "return_to_zero": true
+      }
+    },
+    {
+      "id": "endurance_climb",
+      "name": "Endurance Climb",
+      "description": "Steady progression workout for building endurance",
+      "steps": [
+        {
+          "position": 10000,
+          "duration": 120,
+          "label": "Base pace"
+        },
+        {
+          "position": 20000,
+          "duration": 180,
+          "label": "Climbing"
+        },
+        {
+          "position": 30000,
+          "duration": 120,
+          "label": "Peak effort"
+        },
+        {
+          "position": 15000,
+          "duration": 120,
+          "label": "Cool down"
+        }
+      ],
+      "options": {
+        "repeat": false,
+        "return_to_zero": true
+      }
+    }
+  ]
+}
