@@ -806,6 +806,29 @@
             </p>
           </div>
 
+          <div class="control-group">
+            <label class="control-label">System</label>
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+              <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 12px; color: var(--text-secondary);">
+                <span style="font-weight: 600;">Version:</span>
+                <span id="system-version">Loading...</span>
+                <span style="font-weight: 600;">Device ID:</span>
+                <span id="system-device-id">-</span>
+                <span style="font-weight: 600;">Uptime:</span>
+                <span id="system-uptime">-</span>
+              </div>
+            </div>
+            <button class="btn-secondary" onclick="checkForUpdates()" style="width: 100%; margin-bottom: 8px;">
+              <span id="update-button-text">Check for Updates</span>
+            </button>
+            <button id="update-button" class="btn-primary" onclick="triggerUpdate()" style="width: 100%; display: none;">
+              Update Available - Click to Install
+            </button>
+            <p id="update-status" style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; display: none;">
+              Update in progress...
+            </p>
+          </div>
+
           <div class="tech-info">
             GPIO 5 (DIR) | GPIO 6 (PUL) | BCM Mode
           </div>

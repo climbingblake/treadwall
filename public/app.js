@@ -627,6 +627,125 @@ function formatDuration(seconds) {
   return secs + 's';
 }
 
+// ========== SYSTEM FUNCTIONS ==========
+
+// Fetch system information
+async function fetchSystemInfo() {
+  try {
+    const response = await fetch(`${API_BASE}/system/info`);
+    const data = await response.json();
+
+    // Update UI
+    document.getElementById('system-version').textContent = data.version + ' (' + data.branch + ')';
+    document.getElementById('system-device-id').textContent = data.device_id || 'Not configured';
+    document.getElementById('system-uptime').textContent = data.uptime || '-';
+
+    // Show update button if updates available
+    if (data.updates_available) {
+      document.getElementById('update-button').style.display = 'block';
+      document.getElementById('update-button-text').textContent = 'Updates Available!';
+    } else {
+      document.getElementById('update-button').style.display = 'none';
+      document.getElementById('update-button-text').textContent = 'Check for Updates';
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch system info:', error);
+    document.getElementById('system-version').textContent = 'Error loading';
+  }
+}
+
+// Check for updates
+async function checkForUpdates() {
+  const buttonText = document.getElementById('update-button-text');
+  const originalText = buttonText.textContent;
+
+  buttonText.textContent = 'Checking...';
+
+  try {
+    const data = await fetchSystemInfo();
+
+    if (data.updates_available) {
+      buttonText.textContent = 'Updates Available!';
+    } else {
+      buttonText.textContent = 'Up to date!';
+      setTimeout(() => {
+        buttonText.textContent = originalText;
+      }, 3000);
+    }
+  } catch (error) {
+    buttonText.textContent = 'Check failed';
+    setTimeout(() => {
+      buttonText.textContent = originalText;
+    }, 3000);
+  }
+}
+
+// Trigger system update
+async function triggerUpdate() {
+  if (!confirm('This will update the system and restart the application. Continue?')) {
+    return;
+  }
+
+  const updateButton = document.getElementById('update-button');
+  const statusText = document.getElementById('update-status');
+
+  // Hide update button and show status
+  updateButton.style.display = 'none';
+  statusText.style.display = 'block';
+  statusText.textContent = 'Starting update...';
+
+  try {
+    const response = await fetch(`${API_BASE}/system/update`, {
+      method: 'POST'
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      statusText.textContent = 'Update in progress. Application will restart automatically...';
+      statusText.style.color = '#10b981';
+
+      // Poll for application to come back online
+      let attempts = 0;
+      const maxAttempts = 60; // Try for 1 minute
+
+      const pollInterval = setInterval(async () => {
+        attempts++;
+
+        if (attempts > maxAttempts) {
+          clearInterval(pollInterval);
+          statusText.textContent = 'Update taking longer than expected. Please refresh manually.';
+          statusText.style.color = '#ef4444';
+          return;
+        }
+
+        try {
+          const statusResponse = await fetch(`${API_BASE}/status`);
+          if (statusResponse.ok) {
+            clearInterval(pollInterval);
+            statusText.textContent = 'Update complete! Reloading...';
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
+        } catch (e) {
+          // Still updating, continue polling
+          statusText.textContent = `Update in progress... (${attempts}s)`;
+        }
+      }, 1000);
+
+    } else {
+      statusText.textContent = 'Update failed: ' + data.message;
+      statusText.style.color = '#ef4444';
+    }
+  } catch (error) {
+    statusText.textContent = 'Failed to start update';
+    statusText.style.color = '#ef4444';
+    console.error(error);
+  }
+}
+
 // ========== UTILITY FUNCTIONS ==========
 
 function showError(elementId, message) {
@@ -661,6 +780,9 @@ function initialize() {
 
   // Load routines
   fetchRoutines();
+
+  // Load system info
+  fetchSystemInfo();
 
   // Initialize button states
   console.log('Initializing routine control buttons...');

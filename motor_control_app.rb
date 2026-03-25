@@ -297,6 +297,11 @@ get '/api/status' do
         pause: '/api/routines/pause',
         resume: '/api/routines/resume',
         status: '/api/routines/status'
+      },
+      system: {
+        info: '/api/system/info',
+        update: 'POST /api/system/update',
+        update_log: '/api/system/update-log'
       }
     }
   })
@@ -621,6 +626,97 @@ post '/api/routines/resume' do
     success: true,
     message: 'Routine resumed'
   })
+end
+
+# ========== SYSTEM ENDPOINTS ==========
+
+# Get system information
+get '/api/system/info' do
+  app_dir = File.dirname(__FILE__)
+
+  # Get git version info
+  version = `cd #{app_dir} && git rev-parse --short HEAD 2>/dev/null`.strip
+  version = 'unknown' if version.empty?
+
+  branch = `cd #{app_dir} && git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+  branch = 'unknown' if branch.empty?
+
+  last_commit = `cd #{app_dir} && git log -1 --format="%ai" 2>/dev/null`.strip
+  last_commit = 'unknown' if last_commit.empty?
+
+  # Get system info
+  uptime = `uptime -p 2>/dev/null`.strip
+  uptime = 'unknown' if uptime.empty?
+
+  # Check if updates are available
+  updates_available = false
+  begin
+    `cd #{app_dir} && git fetch origin 2>/dev/null`
+    local = `cd #{app_dir} && git rev-parse HEAD 2>/dev/null`.strip
+    remote = `cd #{app_dir} && git rev-parse origin/main 2>/dev/null`.strip
+    updates_available = (local != remote && !local.empty? && !remote.empty?)
+  rescue
+    # Ignore errors
+  end
+
+  json({
+    device_id: CONFIG['device_id'] || 'unknown',
+    version: version,
+    branch: branch,
+    last_commit: last_commit,
+    uptime: uptime,
+    updates_available: updates_available,
+    stepper_position: $stepper_position
+  })
+end
+
+# Trigger system update
+post '/api/system/update' do
+  app_dir = File.dirname(__FILE__)
+  update_script = File.join(app_dir, 'scripts', 'update.sh')
+
+  unless File.exist?(update_script)
+    status 500
+    return json({
+      success: false,
+      message: 'Update script not found'
+    })
+  end
+
+  # Run update in background thread
+  Thread.new do
+    begin
+      puts "=== Starting system update ==="
+      system("#{update_script} 2>&1")
+      puts "=== Update completed ==="
+    rescue => e
+      puts "Update error: #{e.message}"
+    end
+  end
+
+  json({
+    success: true,
+    message: 'Update started in background. The system will restart automatically.',
+    note: 'Check /home/pi/treadwall-update.log for progress'
+  })
+end
+
+# Get update log (last 50 lines)
+get '/api/system/update-log' do
+  log_file = '/home/pi/treadwall-update.log'
+
+  if File.exist?(log_file)
+    log_lines = `tail -n 50 #{log_file}`.split("\n")
+    json({
+      success: true,
+      log: log_lines
+    })
+  else
+    json({
+      success: true,
+      log: ['No update log available']
+    })
+  end
 end
 
 # Cleanup on exit

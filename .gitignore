@@ -1,2 +1,27 @@
 .claude/*
 
+# Device-specific configuration files
+motor_state.json
+config.json
+config/device-*.json
+
+# Logs
+*.log
+treadwall-update.log
+
+# Backups
+treadwall-backup-*
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*~

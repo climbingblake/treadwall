@@ -1,0 +1,19 @@
+{
+  "device_id": "CHANGE_ME_001",
+  "gpio": {
+    "servo_pin": 4,
+    "stepper_dir_pin": 5,
+    "stepper_pul_pin": 6
+  },
+  "stepper": {
+    "min_position": 0,
+    "max_position": 75000,
+    "step_delay": 0.0002,
+    "step_increment": 2500
+  },
+  "network": {
+    "ap_ssid": "TreadWall-{DEVICE_ID}",
+    "ap_password": "CHANGE_ME_PASSWORD",
+    "ap_channel": 6
+  }
+}
