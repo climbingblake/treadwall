@@ -36,7 +36,20 @@ if [ -z "$PASSWORD" ]; then
     exit 1
 fi
 
+# Auto-detect WiFi interface
+# If wlan1 exists (USB adapter), use it for home WiFi
+# Otherwise, use wlan0 (built-in WiFi)
+if ip link show wlan1 >/dev/null 2>&1; then
+    WIFI_IFACE="wlan1"
+    WIFI_MODE="Dual WiFi Mode (wlan0=AP, wlan1=Client)"
+else
+    WIFI_IFACE="wlan0"
+    WIFI_MODE="Client Only Mode (wlan0=Client)"
+fi
+
 echo "Configuring WiFi for SSID: $SSID"
+echo "WiFi Mode: $WIFI_MODE"
+echo "Target Interface: $WIFI_IFACE"
 
 # Path to wpa_supplicant configuration
 WPA_CONF="/etc/wpa_supplicant/wpa_supplicant.conf"
@@ -125,11 +138,11 @@ echo "✓ WiFi configuration updated"
 # Apply configuration
 echo "Applying configuration..."
 
-# Check if NetworkManager is managing wlan1
-if systemctl is-active --quiet NetworkManager && nmcli device status | grep -q "wlan1.*wifi"; then
+# Check if NetworkManager is managing the WiFi interface
+if systemctl is-active --quiet NetworkManager && nmcli device status | grep -q "$WIFI_IFACE.*wifi"; then
     echo "Using NetworkManager..."
     # Use nmcli to connect (NetworkManager ignores wpa_supplicant.conf)
-    if nmcli device wifi connect "$SSID" password "$PASSWORD" ifname wlan1 2>&1 | tee -a /tmp/wifi-config.log; then
+    if nmcli device wifi connect "$SSID" password "$PASSWORD" ifname $WIFI_IFACE 2>&1 | tee -a /tmp/wifi-config.log; then
         echo "✓ NetworkManager connection initiated"
     else
         echo "⚠ NetworkManager connection failed, check /tmp/wifi-config.log"
@@ -137,20 +150,20 @@ if systemctl is-active --quiet NetworkManager && nmcli device status | grep -q "
 else
     echo "Using wpa_supplicant..."
     # Use wpa_supplicant for direct control
-    wpa_cli -i wlan1 reconfigure > /dev/null 2>&1 || true
+    wpa_cli -i $WIFI_IFACE reconfigure > /dev/null 2>&1 || true
 fi
 
 # Wait a moment for the connection attempt
 sleep 5
 
 # Check if connected
-CONNECTED_SSID=$(iwgetid wlan1 | grep -oP 'ESSID:"\K[^"]+' || echo "")
+CONNECTED_SSID=$(iwgetid $WIFI_IFACE | grep -oP 'ESSID:"\K[^"]+' || echo "")
 
 if [ "$CONNECTED_SSID" = "$SSID" ]; then
     echo "✓ Successfully connected to $SSID"
 
     # Get IP address
-    IP_ADDR=$(ip -4 addr show wlan1 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "unknown")
+    IP_ADDR=$(ip -4 addr show $WIFI_IFACE | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "unknown")
     echo "✓ IP Address: $IP_ADDR"
 
     exit 0

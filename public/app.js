@@ -755,10 +755,18 @@ async function fetchNetworkStatus() {
     const data = await response.json();
 
     if (data.success) {
-      // Update AP status
-      const apStatus = data.ap_mode.enabled ? '✓ Enabled' : 'Disabled';
-      document.getElementById('network-ap-status').textContent = apStatus;
-      document.getElementById('network-ap-ip').textContent = data.ap_mode.ip;
+      // Show/hide AP section based on mode
+      const apSection = document.getElementById('network-ap-section');
+      if (data.ap_mode.available) {
+        // Dual WiFi mode - show AP status
+        if (apSection) apSection.style.display = '';
+        const apStatus = data.ap_mode.enabled ? '✓ Enabled' : 'Disabled';
+        document.getElementById('network-ap-status').textContent = apStatus;
+        document.getElementById('network-ap-ip').textContent = data.ap_mode.ip;
+      } else {
+        // Client-only mode - hide AP section
+        if (apSection) apSection.style.display = 'none';
+      }
 
       // Update home network status
       const homeStatus = data.home_network.connected ? '✓ Connected' : 'Not connected';
@@ -770,12 +778,16 @@ async function fetchNetworkStatus() {
       } else {
         document.getElementById('network-home-ip').textContent = '-';
       }
+
+      // Show mode description (optional debug info)
+      console.log('WiFi Mode:', data.mode_description);
     }
 
     return data;
   } catch (error) {
     console.error('Failed to fetch network status:', error);
-    document.getElementById('network-ap-status').textContent = 'Error loading';
+    const apStatusEl = document.getElementById('network-ap-status');
+    if (apStatusEl) apStatusEl.textContent = 'Error loading';
   }
 }
 

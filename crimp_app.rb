@@ -104,6 +104,38 @@ end
 $routines = load_routines
 puts "✓ Loaded #{$routines.length} training routines"
 
+# ========== NETWORK INTERFACE DETECTION ==========
+
+# Detect WiFi deployment mode and interfaces
+def detect_wifi_config
+  # Check if wlan1 (USB WiFi adapter) exists
+  wlan1_exists = system('ip link show wlan1 >/dev/null 2>&1')
+
+  if wlan1_exists
+    # Dual-WiFi mode: wlan0 = AP, wlan1 = home WiFi client
+    {
+      mode: 'dual_wifi',
+      ap_interface: 'wlan0',
+      client_interface: 'wlan1',
+      description: 'Dual WiFi (AP + Client)'
+    }
+  else
+    # Client-only mode: wlan0 = home WiFi client, no AP
+    {
+      mode: 'client_only',
+      ap_interface: nil,
+      client_interface: 'wlan0',
+      description: 'WiFi Client Only'
+    }
+  end
+end
+
+# Detect configuration at startup
+$wifi_config = detect_wifi_config
+puts "✓ WiFi Mode: #{$wifi_config[:description]}"
+puts "  - Client Interface: #{$wifi_config[:client_interface]}"
+puts "  - AP Interface: #{$wifi_config[:ap_interface] || 'None'}" if $wifi_config[:ap_interface]
+
 # ========== STEPPER FUNCTIONS ==========
 
 def set_stepper_position(target_position, bypass_limits: false)
@@ -728,28 +760,40 @@ end
 # Get network status
 get '/api/network/status' do
   begin
-    # Get wlan1 status (home network interface - USB WiFi adapter)
-    wlan1_status = `iwgetid wlan1 2>/dev/null | grep -oP 'ESSID:"\\K[^"]+'`.strip
-    wlan1_connected = !wlan1_status.empty?
+    # Use detected WiFi configuration
+    client_iface = $wifi_config[:client_interface]
+    ap_iface = $wifi_config[:ap_interface]
 
-    # Get IP addresses
-    wlan0_ip = `ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
-    wlan1_ip = `ip -4 addr show wlan1 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+    # Get client interface status
+    client_ssid = `iwgetid #{client_iface} 2>/dev/null | grep -oP 'ESSID:"\\K[^"]+'`.strip
+    client_connected = !client_ssid.empty?
+    client_ip = `ip -4 addr show #{client_iface} 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
 
-    # Get AP SSID from config (handle missing network section)
-    ap_ssid = CONFIG.dig('network', 'ap_ssid') || 'TreadWall-Control'
+    # Get AP interface status (if exists)
+    if ap_iface
+      ap_ip = `ip -4 addr show #{ap_iface} 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+      ap_enabled = !ap_ip.empty?
+      ap_ssid = CONFIG.dig('network', 'ap_ssid') || 'TreadWall-Control'
+    else
+      ap_ip = nil
+      ap_enabled = false
+      ap_ssid = nil
+    end
 
     json({
       success: true,
+      mode: $wifi_config[:mode],
+      mode_description: $wifi_config[:description],
       ap_mode: {
-        enabled: !wlan0_ip.empty?,
-        ip: wlan0_ip.empty? ? 'Not configured' : wlan0_ip,
-        ssid: ap_ssid
+        enabled: ap_enabled,
+        ip: ap_enabled ? ap_ip : 'Not configured',
+        ssid: ap_ssid || 'N/A',
+        available: !ap_iface.nil?
       },
       home_network: {
-        connected: wlan1_connected,
-        ssid: wlan1_connected ? wlan1_status : 'Not connected',
-        ip: wlan1_ip.empty? ? 'Not connected' : wlan1_ip
+        connected: client_connected,
+        ssid: client_connected ? client_ssid : 'Not connected',
+        ip: client_connected ? client_ip : 'Not connected'
       }
     })
   rescue => e

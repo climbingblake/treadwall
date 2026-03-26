@@ -810,13 +810,15 @@
             <label class="control-label">Network Configuration</label>
             <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
               <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
-                <span style="font-weight: 600;">AP Mode:</span>
-                <span id="network-ap-status">Loading...</span>
-                <span style="font-weight: 600;">AP IP:</span>
-                <span id="network-ap-ip">-</span>
-                <span style="font-weight: 600;">Home Network:</span>
+                <div id="network-ap-section" style="display: contents;">
+                  <span style="font-weight: 600;">AP Mode:</span>
+                  <span id="network-ap-status">Loading...</span>
+                  <span style="font-weight: 600;">AP IP:</span>
+                  <span id="network-ap-ip">-</span>
+                </div>
+                <span style="font-weight: 600;">WiFi Network:</span>
                 <span id="network-home-status">-</span>
-                <span style="font-weight: 600;">Home IP:</span>
+                <span style="font-weight: 600;">WiFi IP:</span>
                 <span id="network-home-ip">-</span>
               </div>
               <div style="border-top: 1px solid var(--border); padding-top: 16px;">
