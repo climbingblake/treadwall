@@ -35,18 +35,21 @@ sudo apt update
 sudo apt install ruby python3 python3-pip git
 
 # Install RPi.GPIO
-# try this
+# try this first
 sudo pip3 install RPi.GPIO
-# then or this
+# or this if above fails
 sudo apt install python3-rpi.gpio
 
-# Install Ruby dependencies
-sudo gem install sinatra sinatra-contrib --no-doc
+# Install Bundler (required for managing Ruby gems)
+sudo gem install bundler --no-doc
 
 # Clone repository
 cd /home/pi
 git clone https://github.com/climbingblake/treadwall
 cd treadwall
+
+# Install Ruby gems from vendored bundle
+bundle install --local
 
 # Create device-specific config
 cp config/config.example.json config.json
@@ -61,6 +64,7 @@ nano config.json  # Edit device_id and other settings
 sudo cp config/crimp-app.service.example /etc/systemd/system/crimp-app.service
 sudo systemctl enable crimp-app.service
 sudo systemctl start crimp-app.service
+sudo journalctl -u crimp-app.service -n 50
 ```
 
 ### 3. Access the Interface
