@@ -728,25 +728,25 @@ end
 # Get network status
 get '/api/network/status' do
   begin
-    # Get wlan0 status (home network interface)
-    wlan0_status = `iwgetid -r 2>/dev/null`.strip
-    wlan0_connected = !wlan0_status.empty?
+    # Get wlan1 status (home network interface - USB WiFi adapter)
+    wlan1_status = `iwgetid -i wlan1 -r 2>/dev/null`.strip
+    wlan1_connected = !wlan1_status.empty?
 
     # Get IP addresses
     wlan0_ip = `ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
-    wlan0_ap_ip = `ip -4 addr show wlan0_ap 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+    wlan1_ip = `ip -4 addr show wlan1 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
 
     json({
       success: true,
       ap_mode: {
-        enabled: !wlan0_ap_ip.empty?,
-        ip: wlan0_ap_ip.empty? ? 'Not configured' : wlan0_ap_ip,
+        enabled: !wlan0_ip.empty?,
+        ip: wlan0_ip.empty? ? 'Not configured' : wlan0_ip,
         ssid: CONFIG['network']['ap_ssid'] || 'TreadWall-Control'
       },
       home_network: {
-        connected: wlan0_connected,
-        ssid: wlan0_connected ? wlan0_status : 'Not connected',
-        ip: wlan0_ip.empty? ? 'Not connected' : wlan0_ip
+        connected: wlan1_connected,
+        ssid: wlan1_connected ? wlan1_status : 'Not connected',
+        ip: wlan1_ip.empty? ? 'Not connected' : wlan1_ip
       }
     })
   rescue => e

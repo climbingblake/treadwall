@@ -124,19 +124,19 @@ echo "✓ WiFi configuration updated"
 
 # Reconfigure wpa_supplicant to pick up the new settings
 echo "Applying configuration..."
-wpa_cli -i wlan0 reconfigure > /dev/null 2>&1 || true
+wpa_cli -i wlan1 reconfigure > /dev/null 2>&1 || true
 
 # Wait a moment for the connection attempt
 sleep 3
 
 # Check if connected
-CONNECTED_SSID=$(iwgetid -r 2>/dev/null || echo "")
+CONNECTED_SSID=$(iwgetid -i wlan1 -r 2>/dev/null || echo "")
 
 if [ "$CONNECTED_SSID" = "$SSID" ]; then
     echo "✓ Successfully connected to $SSID"
 
     # Get IP address
-    IP_ADDR=$(ip -4 addr show wlan0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "unknown")
+    IP_ADDR=$(ip -4 addr show wlan1 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "unknown")
     echo "✓ IP Address: $IP_ADDR"
 
     exit 0
