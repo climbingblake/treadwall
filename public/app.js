@@ -746,6 +746,111 @@ async function triggerUpdate() {
   }
 }
 
+// ========== NETWORK FUNCTIONS ==========
+
+// Fetch network status
+async function fetchNetworkStatus() {
+  try {
+    const response = await fetch(`${API_BASE}/network/status`);
+    const data = await response.json();
+
+    if (data.success) {
+      // Update AP status
+      const apStatus = data.ap_mode.enabled ? '✓ Enabled' : 'Disabled';
+      document.getElementById('network-ap-status').textContent = apStatus;
+      document.getElementById('network-ap-ip').textContent = data.ap_mode.ip;
+
+      // Update home network status
+      const homeStatus = data.home_network.connected ? '✓ Connected' : 'Not connected';
+      document.getElementById('network-home-status').textContent = homeStatus;
+
+      if (data.home_network.connected) {
+        document.getElementById('network-home-ip').textContent = data.home_network.ip;
+        document.getElementById('network-home-status').textContent = '✓ ' + data.home_network.ssid;
+      } else {
+        document.getElementById('network-home-ip').textContent = '-';
+      }
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch network status:', error);
+    document.getElementById('network-ap-status').textContent = 'Error loading';
+  }
+}
+
+// Configure WiFi
+async function configureWifi() {
+  const ssid = document.getElementById('wifi-ssid-input').value.trim();
+  const password = document.getElementById('wifi-password-input').value;
+  const statusText = document.getElementById('wifi-config-status');
+  const configButton = event.target;
+
+  // Validate inputs
+  if (!ssid) {
+    statusText.textContent = 'Please enter a WiFi network name';
+    statusText.style.color = '#ef4444';
+    statusText.style.display = 'block';
+    return;
+  }
+
+  if (!password) {
+    statusText.textContent = 'Please enter a WiFi password';
+    statusText.style.color = '#ef4444';
+    statusText.style.display = 'block';
+    return;
+  }
+
+  // Show loading state
+  configButton.disabled = true;
+  statusText.textContent = 'Configuring WiFi...';
+  statusText.style.color = 'var(--text-tertiary)';
+  statusText.style.display = 'block';
+
+  try {
+    const response = await fetch(`${API_BASE}/network/configure`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ssid: ssid,
+        password: password
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      statusText.textContent = '✓ WiFi configured! Connecting...';
+      statusText.style.color = '#10b981';
+
+      // Clear password field for security
+      document.getElementById('wifi-password-input').value = '';
+
+      // Wait a few seconds and refresh network status
+      setTimeout(async () => {
+        await fetchNetworkStatus();
+        statusText.textContent = '✓ Configuration complete';
+        setTimeout(() => {
+          statusText.style.display = 'none';
+        }, 5000);
+      }, 5000);
+
+    } else {
+      statusText.textContent = '✗ Configuration failed: ' + data.message;
+      statusText.style.color = '#ef4444';
+    }
+
+  } catch (error) {
+    statusText.textContent = '✗ Failed to configure WiFi';
+    statusText.style.color = '#ef4444';
+    console.error(error);
+  } finally {
+    configButton.disabled = false;
+  }
+}
+
 // ========== UTILITY FUNCTIONS ==========
 
 function showError(elementId, message) {
@@ -783,6 +888,9 @@ function initialize() {
 
   // Load system info
   fetchSystemInfo();
+
+  // Load network status
+  fetchNetworkStatus();
 
   // Initialize button states
   console.log('Initializing routine control buttons...');

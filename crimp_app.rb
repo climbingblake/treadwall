@@ -302,6 +302,10 @@ get '/api/status' do
         info: '/api/system/info',
         update: 'POST /api/system/update',
         update_log: '/api/system/update-log'
+      },
+      network: {
+        status: '/api/network/status',
+        configure: 'POST /api/network/configure'
       }
     }
   })
@@ -715,6 +719,105 @@ get '/api/system/update-log' do
     json({
       success: true,
       log: ['No update log available']
+    })
+  end
+end
+
+# ========== NETWORK ENDPOINTS ==========
+
+# Get network status
+get '/api/network/status' do
+  begin
+    # Get wlan0 status (home network interface)
+    wlan0_status = `iwgetid -r 2>/dev/null`.strip
+    wlan0_connected = !wlan0_status.empty?
+
+    # Get IP addresses
+    wlan0_ip = `ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+    wlan0_ap_ip = `ip -4 addr show wlan0_ap 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+
+    json({
+      success: true,
+      ap_mode: {
+        enabled: !wlan0_ap_ip.empty?,
+        ip: wlan0_ap_ip.empty? ? 'Not configured' : wlan0_ap_ip,
+        ssid: CONFIG['network']['ap_ssid'] || 'TreadWall-Control'
+      },
+      home_network: {
+        connected: wlan0_connected,
+        ssid: wlan0_connected ? wlan0_status : 'Not connected',
+        ip: wlan0_ip.empty? ? 'Not connected' : wlan0_ip
+      }
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Failed to get network status: #{e.message}"
+    })
+  end
+end
+
+# Configure WiFi credentials
+post '/api/network/configure' do
+  begin
+    # Parse request body
+    request.body.rewind
+    body = request.body.read
+    data = JSON.parse(body)
+
+    ssid = data['ssid']
+    password = data['password']
+
+    unless ssid && password
+      status 400
+      return json({
+        success: false,
+        message: 'Missing ssid or password'
+      })
+    end
+
+    # Call configuration script
+    app_dir = File.dirname(__FILE__)
+    config_script = File.join(app_dir, 'scripts', 'configure_wifi.sh')
+
+    unless File.exist?(config_script)
+      status 500
+      return json({
+        success: false,
+        message: 'WiFi configuration script not found'
+      })
+    end
+
+    # Run script with ssid and password as arguments
+    result = `sudo #{config_script} "#{ssid}" "#{password}" 2>&1`
+    exit_status = $?.exitstatus
+
+    if exit_status == 0
+      json({
+        success: true,
+        message: 'WiFi configured successfully. Connecting to network...',
+        note: 'Device will attempt to connect to home network while maintaining AP mode'
+      })
+    else
+      status 500
+      json({
+        success: false,
+        message: "Configuration failed: #{result}"
+      })
+    end
+
+  rescue JSON::ParserError => e
+    status 400
+    json({
+      success: false,
+      message: 'Invalid JSON in request body'
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Configuration error: #{e.message}"
     })
   end
 end

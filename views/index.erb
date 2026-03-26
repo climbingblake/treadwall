@@ -807,6 +807,49 @@
           </div>
 
           <div class="control-group">
+            <label class="control-label">Network Configuration</label>
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+              <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+                <span style="font-weight: 600;">AP Mode:</span>
+                <span id="network-ap-status">Loading...</span>
+                <span style="font-weight: 600;">AP IP:</span>
+                <span id="network-ap-ip">-</span>
+                <span style="font-weight: 600;">Home Network:</span>
+                <span id="network-home-status">-</span>
+                <span style="font-weight: 600;">Home IP:</span>
+                <span id="network-home-ip">-</span>
+              </div>
+              <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+                  Connect to your home WiFi network:
+                </p>
+                <div style="margin-bottom: 12px;">
+                  <label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600;">
+                    WiFi SSID
+                  </label>
+                  <input type="text" id="wifi-ssid-input" placeholder="Enter network name"
+                    style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border);
+                    border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: inherit;">
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600;">
+                    WiFi Password
+                  </label>
+                  <input type="password" id="wifi-password-input" placeholder="Enter password"
+                    style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border);
+                    border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: inherit;">
+                </div>
+                <button class="btn-primary" onclick="configureWifi()" style="width: 100%;">
+                  Connect to Network
+                </button>
+                <p id="wifi-config-status" style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; display: none;">
+                  Configuring...
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group">
             <label class="control-label">System</label>
             <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
               <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 12px; color: var(--text-secondary);">

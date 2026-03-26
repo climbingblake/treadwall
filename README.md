@@ -76,6 +76,29 @@ sudo journalctl -u crimp-app.service -n 50
 **Via Home Network:**
 - Open browser: `http://treadwall-001.local:4567` (or device hostname)
 
+### 4. Connect to Your Home WiFi Network
+
+The device operates in **dual-mode WiFi**, maintaining both an Access Point (for direct connection) and a client connection (for home network access).
+
+**To configure home WiFi via Web Interface:**
+
+1. Connect to the device via its Access Point (see step 3 above)
+2. Open the web interface at `http://192.168.50.1:4567`
+3. Scroll to the **Network Configuration** section
+4. Enter your home WiFi network name (SSID) and password
+5. Click "Connect to Network"
+6. Wait for confirmation (device will remain accessible via AP)
+
+**Benefits of dual-mode:**
+- ✅ Device always accessible via Access Point
+- ✅ Automatic updates from home network
+- ✅ No need to reconfigure if home network changes - just reconnect via AP
+- ✅ Easy deployment to multiple locations with different WiFi networks
+
+**To reconfigure WiFi:**
+- Simply connect to the AP again and enter new credentials in the web UI
+- No SSH or command-line access required
+
 ## Configuration
 
 Edit `config.json` to customize:
@@ -148,6 +171,10 @@ Access API documentation: `http://<device-ip>:4567/api/status`
 - `GET /api/system/info` - Version and device info
 - `POST /api/system/update` - Trigger system update
 - `GET /api/system/update-log` - View update log
+
+**Network:**
+- `GET /api/network/status` - Current network status (AP and home network)
+- `POST /api/network/configure` - Configure home WiFi credentials
 
 ## Development Workflow
 
