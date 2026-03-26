@@ -122,15 +122,29 @@ EOF
 
 echo "✓ WiFi configuration updated"
 
-# Reconfigure wpa_supplicant to pick up the new settings
+# Apply configuration
 echo "Applying configuration..."
-wpa_cli -i wlan1 reconfigure > /dev/null 2>&1 || true
+
+# Check if NetworkManager is managing wlan1
+if systemctl is-active --quiet NetworkManager && nmcli device status | grep -q "wlan1.*wifi"; then
+    echo "Using NetworkManager..."
+    # Use nmcli to connect (NetworkManager ignores wpa_supplicant.conf)
+    if nmcli device wifi connect "$SSID" password "$PASSWORD" ifname wlan1 2>&1 | tee -a /tmp/wifi-config.log; then
+        echo "✓ NetworkManager connection initiated"
+    else
+        echo "⚠ NetworkManager connection failed, check /tmp/wifi-config.log"
+    fi
+else
+    echo "Using wpa_supplicant..."
+    # Use wpa_supplicant for direct control
+    wpa_cli -i wlan1 reconfigure > /dev/null 2>&1 || true
+fi
 
 # Wait a moment for the connection attempt
-sleep 3
+sleep 5
 
 # Check if connected
-CONNECTED_SSID=$(iwgetid -i wlan1 -r 2>/dev/null || echo "")
+CONNECTED_SSID=$(iwgetid wlan1 | grep -oP 'ESSID:"\K[^"]+' || echo "")
 
 if [ "$CONNECTED_SSID" = "$SSID" ]; then
     echo "✓ Successfully connected to $SSID"
