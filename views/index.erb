@@ -581,6 +581,11 @@
       margin-top: 64px;
     }
 
+    .dim{
+      text-align: center;
+      color: var(--text-tertiary);
+      font-size: 12px;
+    }
     @media (max-width: 768px) {
       .container { padding: 0 20px; }
       header { padding: 12px 0; }
@@ -882,8 +887,9 @@
   <header>
     <div class="container">
       <div class="header-left">
-        <a href="/" class="logo">C.R.I.M.P</a>
         <div class="status-indicator connected" id="status-indicator"></div>
+        <a href="/" class="logo">C.R.I.M.P</a>
+        <span class="dim">Climbing Routine Interactive Motor Platform</span>
       </div>
       <nav>
         <button class="header-toggle" onclick="toggleMotor()">
