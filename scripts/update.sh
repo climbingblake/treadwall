@@ -124,13 +124,27 @@ if [ "$STASHED" = true ]; then
     fi
 fi
 
-# Check if dependencies need updating (optional - uncomment if using bundler)
-# if [ -f "Gemfile" ]; then
-#     log "Checking Ruby dependencies..."
-#     gem install bundler --quiet
-#     bundle install --quiet
-#     log_success "Dependencies updated"
-# fi
+# Check if dependencies need updating
+if [ -f "Gemfile" ]; then
+    log "Checking Ruby dependencies..."
+
+    # Ensure bundler is installed
+    if ! command -v bundle &> /dev/null; then
+        log "Installing bundler..."
+        sudo gem install bundler --no-doc 2>&1 | tee -a "$LOG_FILE"
+    fi
+
+    # Verify gems are present (they should be vendored in git)
+    if [ -d "vendor/bundle" ]; then
+        log_success "Vendored gems found"
+    else
+        log_warning "Vendored gems not found, installing..."
+        bundle config set --local path 'vendor/bundle'
+        bundle install 2>&1 | tee -a "$LOG_FILE"
+    fi
+
+    log_success "Dependencies ready"
+fi
 
 # Restart the service
 log "Restarting $SERVICE_NAME..."

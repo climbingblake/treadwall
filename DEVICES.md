@@ -1,6 +1,6 @@
-# TreadWall Device Inventory
+# CRIMP Device Inventory
 
-This file tracks all deployed Raspberry Pi devices running the TreadWall motor control system.
+This file tracks all deployed Raspberry Pi devices running the CRIMP (Climbing Routine Interactive Motor Platform) system.
 
 ## Device List
 

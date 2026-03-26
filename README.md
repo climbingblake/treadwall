@@ -1,4 +1,4 @@
-# TreadWall Motor Control System
+# CRIMP - Climbing Routine Interactive Motor Platform
 
 A Ruby-based web application for controlling stepper motors on Raspberry Pi, designed for automated climbing wall systems.
 
@@ -35,14 +35,17 @@ sudo apt update
 sudo apt install ruby python3 python3-pip git
 
 # Install RPi.GPIO
+# try this
 sudo pip3 install RPi.GPIO
+# then or this
+sudo apt install python3-rpi.gpio
 
 # Install Ruby dependencies
-sudo gem install sinatra sinatra-contrib
+sudo gem install sinatra sinatra-contrib --no-doc
 
 # Clone repository
 cd /home/pi
-git clone <your-repo-url> treadwall
+git clone https://github.com/climbingblake/treadwall
 cd treadwall
 
 # Create device-specific config
@@ -56,14 +59,14 @@ Create `/etc/systemd/system/motor-control.service`:
 
 ```ini
 [Unit]
-Description=TreadWall Motor Control
+Description=CRIMP - Climbing Routine Interactive Motor Platform
 After=network.target
 
 [Service]
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/treadwall
-ExecStart=/usr/bin/ruby /home/pi/treadwall/motor_control_app.rb
+ExecStart=/usr/bin/bundle exec ruby crimp_app.rb
 Restart=always
 RestartSec=10
 

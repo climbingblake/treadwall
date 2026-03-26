@@ -12,6 +12,10 @@ treadwall-update.log
 # Backups
 treadwall-backup-*
 
+# Ruby dependencies - VENDORED (committed to repo)
+# vendor/bundle/ - intentionally committed
+# .bundle/ - intentionally committed
+
 # Python cache
 __pycache__/
 *.py[cod]

@@ -271,7 +271,7 @@ end
 # API Status endpoint
 get '/api/status' do
   json({
-    message: 'Motor Control API - Stepper and Routines',
+    message: 'CRIMP API - Climbing Routine Interactive Motor Platform',
     stepper: {
       current_position: $stepper_position,
       increment: $stepper_increment,
@@ -738,6 +738,6 @@ at_exit do
 end
 
 # Start message
-puts "Starting Motor Control Server..."
+puts "Starting CRIMP (Climbing Routine Interactive Motor Platform)..."
 puts "Access the app at http://localhost:4567"
 puts "API documentation at http://localhost:4567/api/status"
