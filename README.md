@@ -32,7 +32,7 @@ A Ruby-based web application for controlling stepper motors on Raspberry Pi, des
 ```bash
 # Install dependencies
 sudo apt update
-sudo apt install ruby python3 python3-pip git
+sudo apt install ruby ruby-dev python3 python3-pip git
 
 # Install RPi.GPIO
 # try this first
