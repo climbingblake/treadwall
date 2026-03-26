@@ -75,9 +75,9 @@ rm -f /usr/local/bin/start-ap.sh
 echo "✓ Configuration files removed"
 
 echo ""
-echo "Step 3: Removing virtual interface..."
+echo "Step 3: Cleaning up network interfaces..."
 ip link delete wlan0_ap 2>/dev/null || true
-echo "✓ Virtual interface removed"
+echo "✓ Network interfaces cleaned"
 
 echo ""
 echo "Step 4: Resetting wlan0..."
@@ -171,9 +171,10 @@ sudo rm -f /etc/systemd/system/treadwall-ap.service
 sudo rm -f /usr/local/bin/start-ap.sh
 ```
 
-### 3. Remove Virtual Interface
+### 3. Clean Up Network Interfaces
 
 ```bash
+# Remove virtual interface if it exists (from old AP setups)
 sudo ip link delete wlan0_ap 2>/dev/null || true
 ```
 

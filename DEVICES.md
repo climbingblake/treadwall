@@ -80,10 +80,18 @@ For each new device:
 
 ## Network Topology
 
+**With USB WiFi Adapter (Dual-Mode):**
 ```
-[Device] --wlan0_ap--> [Local Devices]
-    |                    (192.168.50.0/24)
+[Device]
     |
-    +----wlan0----> [Home WiFi Router]
-                     (Internet access for updates)
+    +----wlan0 (built-in)----> [Access Point]
+    |                           (192.168.50.0/24)
+    |                           Local device control
+    |
+    +----wlan1 (USB adapter)---> [Home WiFi Router]
+                                  (Internet access for updates)
 ```
+
+**Without USB Adapter (Choose One):**
+- **AP-only**: wlan0 = Access Point, use ethernet for updates
+- **Client-only**: wlan0 = Home WiFi, access via http://treadwall.local:4567

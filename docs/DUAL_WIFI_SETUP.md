@@ -1,10 +1,10 @@
-# Dual-Mode WiFi Setup (Future Implementation)
+# Dual-Mode WiFi Setup
 
 This document describes how to set up the CRIMP system with simultaneous Access Point and WiFi client capabilities using a USB WiFi adapter.
 
 ## Why USB WiFi Adapter?
 
-The Raspberry Pi Zero 2 W has only one WiFi radio (wlan0), which cannot reliably run both Access Point and WiFi client modes simultaneously using virtual interfaces. The solution is to use a USB WiFi adapter:
+The Raspberry Pi Zero 2 W has only one WiFi radio (wlan0), which cannot reliably run both Access Point and WiFi client modes simultaneously. The solution is to use a USB WiFi adapter for dual-radio operation:
 
 - **wlan0** (built-in): Access Point for direct device control
 - **wlan1** (USB adapter): WiFi client for home network/internet
@@ -50,20 +50,15 @@ The repository includes setup scripts in `scripts/`:
 
 ### For USB WiFi Adapter Setup (Recommended)
 
-**`scripts/setup_dual_wifi_usb.sh`** (to be created)
+**`scripts/setup_dual_wifi_usb.sh`** ✅
 - Sets up wlan0 as Access Point
 - Configures wlan1 (USB) as WiFi client
 - Both work simultaneously
 
-### For Single WiFi Radio (Not Recommended)
-
-**`scripts/setup_dual_wifi_nm.sh`**
-- Attempts virtual interface on single radio
-- Works on some Pi models but unreliable on Pi Zero 2 W
-
-**`scripts/setup_ap_only.sh`**
+**`scripts/setup_ap_only.sh`** (Alternative for no USB adapter)
 - Configures wlan0 as AP only
-- No internet connectivity without ethernet
+- No dual-mode, no internet connectivity without ethernet
+- Useful for standalone installations
 
 ## Configuration Steps (With USB Adapter)
 

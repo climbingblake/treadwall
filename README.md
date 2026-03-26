@@ -229,7 +229,7 @@ sudo systemctl start crimp-app.service
 ### Can't connect to AP
 - Check WiFi configuration in `/etc/hostapd/hostapd.conf`
 - Verify services: `sudo systemctl status hostapd dnsmasq`
-- Check virtual interface: `ip addr show wlan0_ap`
+- Check AP interface: `ip addr show wlan0`
 
 ## Safety Notes
 
