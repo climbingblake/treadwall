@@ -1,0 +1,16 @@
+[Unit]
+Description=CRIMP Web App
+After=network.target pigpiod.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/treadwall
+ExecStart=/usr/bin/ruby crimp_app.rb
+Environment="GEM_HOME=/home/pi/treadwall/vendor/bundle/ruby/3.1.0"
+Environment="GEM_PATH=/home/pi/treadwall/vendor/bundle/ruby/3.1.0"
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

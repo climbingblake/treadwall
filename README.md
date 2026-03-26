@@ -55,28 +55,10 @@ nano config.json  # Edit device_id and other settings
 
 ### 2. Set Up Systemd Service
 
-Create `/etc/systemd/system/crimp-app.service`:
-
-```ini
-[Unit]
-Description=CRIMP - Climbing Routine Interactive Motor Platform
-After=network.target
-
-[Service]
-Type=simple
-User=pi
-WorkingDirectory=/home/pi/treadwall
-ExecStart=/usr/bin/bundle exec ruby crimp_app.rb
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start:
+# copy `/etc/systemd/system/crimp-app.service`:
 
 ```bash
+sudo cp config/crimp-app.service.example /etc/systemd/system/crimp-app.service
 sudo systemctl enable crimp-app.service
 sudo systemctl start crimp-app.service
 ```
