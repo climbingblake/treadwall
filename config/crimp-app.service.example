@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/treadwall
-ExecStart=/usr/bin/bundle exec ruby crimp_app.rb
+ExecStart=/usr/local/bin/bundle exec ruby crimp_app.rb
 Restart=always
 RestartSec=10
 
