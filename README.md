@@ -7,16 +7,23 @@ A Ruby-based web application for controlling stepper motors on Raspberry Pi, des
 - **Manual Control**: Precise stepper motor positioning with real-time feedback
 - **Training Routines**: Automated interval training programs
 - **Position Persistence**: Saves motor position across crashes/reboots
-- **Dual-Mode WiFi**: Acts as both an access point and connects to home network
+- **Dual-Mode WiFi**: Acts as both an access point and connects to home network (requires USB WiFi adapter)
+- **Web-Based WiFi Configuration**: Configure home network via web UI without SSH
 - **Remote Updates**: Web-based system updates with automatic rollback
 - **Calibration Tools**: Bypass safety limits for initial setup
 
 ## Hardware Requirements
 
+**Required:**
 - Raspberry Pi Zero 2 W (or any Raspberry Pi with GPIO)
 - Stepper motor driver (compatible with DIR/PUL interface)
 - Stepper motor
 - Power supply for motor driver
+
+**Optional (for dual-mode WiFi):**
+- USB WiFi adapter (see `docs/DUAL_WIFI_SETUP.md` for recommended models)
+  - Enables simultaneous Access Point + home network connectivity
+  - Without this, choose either AP mode OR client mode (not both)
 
 ## Software Requirements
 
@@ -76,28 +83,35 @@ sudo journalctl -u crimp-app.service -n 50
 **Via Home Network:**
 - Open browser: `http://treadwall-001.local:4567` (or device hostname)
 
-### 4. Connect to Your Home WiFi Network
+### 4. WiFi Configuration (Optional)
 
-The device operates in **dual-mode WiFi**, maintaining both an Access Point (for direct connection) and a client connection (for home network access).
+**For Dual-Mode WiFi (AP + Home Network):**
 
-**To configure home WiFi via Web Interface:**
+Dual-mode WiFi requires a **USB WiFi adapter** because the Pi's built-in WiFi (wlan0) cannot reliably run both modes simultaneously.
 
-1. Connect to the device via its Access Point (see step 3 above)
-2. Open the web interface at `http://192.168.50.1:4567`
-3. Scroll to the **Network Configuration** section
-4. Enter your home WiFi network name (SSID) and password
-5. Click "Connect to Network"
-6. Wait for confirmation (device will remain accessible via AP)
+**Setup:**
+1. Plug in USB WiFi adapter
+2. Run: `sudo ./scripts/setup_dual_wifi_usb.sh` (see `docs/DUAL_WIFI_SETUP.md`)
+3. Use web UI to configure home WiFi credentials
+4. Both AP and home network work simultaneously
 
-**Benefits of dual-mode:**
-- ✅ Device always accessible via Access Point
+**Benefits:**
+- ✅ Always accessible via Access Point
 - ✅ Automatic updates from home network
-- ✅ No need to reconfigure if home network changes - just reconnect via AP
-- ✅ Easy deployment to multiple locations with different WiFi networks
+- ✅ Easy reconfiguration via web UI
+- ✅ Works in multiple locations
 
-**To reconfigure WiFi:**
-- Simply connect to the AP again and enter new credentials in the web UI
-- No SSH or command-line access required
+**Without USB Adapter:**
+
+Choose one mode:
+- **Access Point Only**: Run `sudo ./scripts/setup_ap_only.sh`
+  - Direct device control via AP
+  - Use ethernet for updates
+- **WiFi Client Only**: Normal home network connection (default)
+  - Access via `http://treadwall.local:4567`
+  - No direct AP access
+
+See `docs/DUAL_WIFI_SETUP.md` for complete setup instructions and `docs/REVERT_TO_CLIENT_MODE.md` to switch modes.
 
 ## Configuration
 
