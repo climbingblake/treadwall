@@ -47,13 +47,109 @@
     }
 
     header {
-      padding: 48px 0;
+      padding: 16px 0;
       border-bottom: 1px solid var(--border);
       backdrop-filter: blur(16px);
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(10, 10, 10, 0.8);
+      background: rgba(10, 10, 10, 0.95);
+    }
+
+    header .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 48px;
+      gap: 16px;
+    }
+
+    header .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header .logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    header .logo:hover {
+      color: var(--accent-blue);
+    }
+
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .status-indicator.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 20px var(--accent-green-glow);
+      animation: pulse-connected 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .status-indicator.disconnected {
+      background: #ef4444;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      animation: pulse-disconnected 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulse-connected {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @keyframes pulse-disconnected {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.7;
+        transform: scale(1.2);
+      }
+    }
+
+    header nav {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .nav-link {
+      padding: 10px 16px;
+      min-height: 40px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .nav-link:hover {
+      background: var(--bg-tertiary);
+      border-color: rgba(255, 255, 255, 0.16);
+      color: var(--text-primary);
+      transform: translateY(-1px);
+    }
+
+    .nav-link.active {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      border: none;
+      color: white;
     }
 
     h1 {
@@ -81,7 +177,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
       gap: 48px;
-      margin-bottom: 64px;
+      margin-bottom: 8px;
     }
 
     @media (max-width: 1280px) {
@@ -348,6 +444,10 @@
       color: var(--text-primary);
       border: 1px solid var(--border);
     }
+    .btn-secondary.tall {
+      height: 200px;
+      background: var(--accent-blue-glow);
+    }
 
     .btn-secondary:hover:not(:disabled) {
       background: var(--bg-secondary);
@@ -483,6 +583,18 @@
 
     @media (max-width: 768px) {
       .container { padding: 0 20px; }
+      header { padding: 12px 0; }
+      header .logo { font-size: 18px; }
+      header nav { gap: 8px; }
+      .header-toggle {
+        min-width: 100px;
+        font-size: 12px;
+        padding: 8px 12px;
+      }
+      .nav-link {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
       h1 { font-size: 28px; }
       .controls-grid { grid-template-columns: 1fr; gap: 32px; }
       .status-grid { grid-template-columns: 1fr; }
@@ -491,7 +603,49 @@
       .control-section { padding: 24px; }
     }
 
-    /* Toggle button styles */
+    /* Header toggle button styles - optimized for touchscreen */
+    .header-toggle {
+      padding: 12px 20px;
+      min-width: 180px;
+      min-height: 48px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s var(--transition);
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-toggle::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .header-toggle:active::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .header-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Toggle button styles (legacy - kept for compatibility) */
     .toggle-container {
       display: flex;
       justify-content: center;
@@ -725,13 +879,22 @@
   </style>
 </head>
 <body>
-  <main class="container">
-    <!-- Toggle Button -->
-    <div class="toggle-container">
-      <button class="toggle-button" onclick="toggleMotor()">
-        Switch to <span id="toggle-text">Routines</span>
-      </button>
+  <header>
+    <div class="container">
+      <div class="header-left">
+        <a href="/" class="logo">C.R.I.M.P</a>
+        <div class="status-indicator connected" id="status-indicator"></div>
+      </div>
+      <nav>
+        <button class="header-toggle" onclick="toggleMotor()">
+          Switch to <span id="toggle-text">Routines</span>
+        </button>
+        <a href="/config" class="nav-link">Settings</a>
+      </nav>
     </div>
+  </header>
+
+  <main class="container">
 
     <div class="controls-grid">
 
@@ -742,6 +905,12 @@
 
           <div class="error" id="stepper-error"></div>
 
+          <div class="control-group">
+            <div class="button-group">
+              <button class="btn-secondary tall" onclick="stepperDecrement()">← Decrement</button>
+              <button class="btn-secondary tall" onclick="stepperIncrement()">Increment →</button>
+            </div>
+          </div>
           <div class="status-grid">
             <div class="status-item">
               <label>Position</label>
@@ -755,22 +924,6 @@
             </div>
           </div>
 
-          <div class="control-group">
-            <label class="control-label">Set Position</label>
-            <div class="slider-group">
-              <input type="range" id="stepper-slider" min="-30000" max="30000" value="0" step="1">
-              <input type="number" id="stepper-input" min="-30000" max="30000" value="0">
-              <button class="btn-primary" onclick="setStepperPosition()">Set</button>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">Quick Controls</label>
-            <div class="button-group">
-              <button class="btn-secondary" onclick="stepperDecrement()">← Decrement</button>
-              <button class="btn-secondary" onclick="stepperIncrement()">Increment →</button>
-            </div>
-          </div>
 
           <div class="control-group">
             <label class="control-label">Presets (based on increment)</label>
@@ -780,113 +933,19 @@
           </div>
 
           <div class="control-group">
-            <label class="control-label">Increment Step</label>
+            <label class="control-label">Set Position</label>
             <div class="slider-group">
-              <input type="number" id="stepper-increment-input" min="1" max="<%= MAX_POSITION %>" value="<%= CONFIG['stepper']['step_increment'] %>" style="flex: 1;">
-              <button class="btn-secondary" onclick="setStepperIncrement()">Update</button>
+              <input type="range" id="stepper-slider" min="-30000" max="30000" value="0" step="1">
+              <input type="number" id="stepper-input" min="-30000" max="30000" value="0">
+              <button class="btn-primary" onclick="setStepperPosition()">Set</button>
             </div>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">Calibration</label>
-            <button class="btn-secondary" onclick="resetPosition()" style="width: 100%;">Reset Position to Zero</button>
-            <p style="font-size: 12px; color: var(--text-tertiary); margin-top: 8px; margin-bottom: 12px; text-align: center;">
-              Sets the current position as zero without moving the motor
-            </p>
-            <div style="display: flex; gap: 12px;">
-              <button class="btn-danger" onclick="calibrateDecrement()" style="flex: 1; font-size: 13px;">
-                ⚠ -1000 Steps
-              </button>
-              <button class="btn-danger" onclick="calibrateIncrement()" style="flex: 1; font-size: 13px;">
-                ⚠ +1000 Steps
-              </button>
-            </div>
-            <p style="font-size: 11px; color: #ef4444; margin-top: 8px; text-align: center; font-weight: 600;">
-              DANGER: Bypasses min/max limits
-            </p>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">Network Configuration</label>
-            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-              <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
-                <div id="network-ap-section" style="display: contents;">
-                  <span style="font-weight: 600;">AP Mode:</span>
-                  <span id="network-ap-status">Loading...</span>
-                  <span style="font-weight: 600;">AP IP:</span>
-                  <span id="network-ap-ip">-</span>
-                </div>
-                <span style="font-weight: 600;">WiFi Network:</span>
-                <span id="network-home-status">-</span>
-                <span style="font-weight: 600;">WiFi IP:</span>
-                <span id="network-home-ip">-</span>
-              </div>
-              <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
-                  Connect to your home WiFi network:
-                </p>
-                <div style="margin-bottom: 12px;">
-                  <label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600;">
-                    WiFi SSID
-                  </label>
-                  <input type="text" id="wifi-ssid-input" placeholder="Enter network name"
-                    style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border);
-                    border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: inherit;">
-                </div>
-                <div style="margin-bottom: 12px;">
-                  <label style="display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; font-weight: 600;">
-                    WiFi Password
-                  </label>
-                  <input type="password" id="wifi-password-input" placeholder="Enter password"
-                    style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border);
-                    border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: inherit;">
-                </div>
-                <button class="btn-primary" onclick="configureWifi()" style="width: 100%;">
-                  Connect to Network
-                </button>
-                <p id="wifi-config-status" style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; display: none;">
-                  Configuring...
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="control-group">
-            <label class="control-label">System</label>
-            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-              <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 12px; color: var(--text-secondary);">
-                <span style="font-weight: 600;">Version:</span>
-                <span id="system-version">Loading...</span>
-                <span style="font-weight: 600;">Device ID:</span>
-                <span id="system-device-id">-</span>
-                <span style="font-weight: 600;">Uptime:</span>
-                <span id="system-uptime">-</span>
-              </div>
-            </div>
-            <button class="btn-secondary" onclick="checkForUpdates()" style="width: 100%; margin-bottom: 8px;">
-              <span id="update-button-text">Check for Updates</span>
-            </button>
-            <button id="update-button" class="btn-primary" onclick="triggerUpdate()" style="width: 100%; display: none;">
-              Update Available - Click to Install
-            </button>
-            <p id="update-status" style="font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; display: none;">
-              Update in progress...
-            </p>
-          </div>
-
-          <div class="tech-info">
-            GPIO 5 (DIR) | GPIO 6 (PUL) | BCM Mode
           </div>
         </div>
       </div>
     </div>
 
     <!-- Routine Control -->
-    <div id="routine-div" style="display: none;">
-      <div class="section-header">
-        <div class="indicator green"></div>
-        <div class="section-title">Training Routines</div>
-      </div>
+    <div id="routine-div" style="display: none; margin:0px; padding:0px;">
       <div class="control-section" id="routine-control">
         <h2 class="motor-title">Training Routines</h2>
         <p class="motor-subtitle">Automated interval training programs</p>

@@ -300,6 +300,11 @@ get '/' do
   erb :index
 end
 
+# Configuration page
+get '/config' do
+  erb :config
+end
+
 # API Status endpoint
 get '/api/status' do
   json({

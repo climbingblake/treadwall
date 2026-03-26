@@ -32,9 +32,10 @@ async function fetchStepperStatus() {
     const progress = range > 0 ? Math.round(((data.current_position - data.min_position) / range) * 100) : 0;
     document.getElementById('stepper-progress').textContent = progress;
 
-    // Store min/max for preset generation
+    // Store min/max and increment for preset generation
     window.stepperMinPosition = data.min_position;
     window.stepperMaxPosition = data.max_position;
+    window.stepperIncrement = data.increment;
 
     hideError('stepper-error');
   } catch (error) {
@@ -82,18 +83,26 @@ async function stepperDecrement() {
 
 // Set stepper increment
 async function setStepperIncrement() {
-  const increment = document.getElementById('stepper-increment-input').value;
+  const incrementInput = document.getElementById('stepper-increment-input');
+  if (!incrementInput) {
+    console.error('Increment input not found');
+    return;
+  }
+
+  const increment = incrementInput.value;
 
   try {
     const response = await fetch(`${API_BASE}/stepper/settings/increment/${increment}`);
     const data = await response.json();
 
     if (data.success) {
+      // Update global increment value
+      window.stepperIncrement = data.increment;
       await fetchStepperStatus();
       generateStepperPresets(); // Update presets when increment changes
     }
   } catch (error) {
-    showError('stepper-error', 'Failed to set stepper increment');
+    console.error('Failed to set stepper increment:', error);
   }
 }
 
@@ -163,13 +172,9 @@ async function calibrateDecrement() {
 
 // Generate preset buttons dynamically from MIN to MAX based on increment
 function generateStepperPresets() {
-  var incrementInput = document.getElementById('stepper-increment-input');
-  if (!incrementInput) {
-    console.log('Increment input not found');
-    return;
-  }
+  // Get increment from stored API value
+  var increment = window.stepperIncrement;
 
-  var increment = parseInt(incrementInput.value);
   if (!increment || increment <= 0) {
     console.log('Invalid increment value: ' + increment);
     return;
@@ -635,24 +640,33 @@ async function fetchSystemInfo() {
     const response = await fetch(`${API_BASE}/system/info`);
     const data = await response.json();
 
-    // Update UI
-    document.getElementById('system-version').textContent = data.version + ' (' + data.branch + ')';
-    document.getElementById('system-device-id').textContent = data.device_id || 'Not configured';
-    document.getElementById('system-uptime').textContent = data.uptime || '-';
+    // Update UI if elements exist
+    const versionEl = document.getElementById('system-version');
+    const deviceIdEl = document.getElementById('system-device-id');
+    const uptimeEl = document.getElementById('system-uptime');
+    const updateButtonEl = document.getElementById('update-button');
+    const updateButtonTextEl = document.getElementById('update-button-text');
+
+    if (versionEl) versionEl.textContent = data.version + ' (' + data.branch + ')';
+    if (deviceIdEl) deviceIdEl.textContent = data.device_id || 'Not configured';
+    if (uptimeEl) uptimeEl.textContent = data.uptime || '-';
 
     // Show update button if updates available
-    if (data.updates_available) {
-      document.getElementById('update-button').style.display = 'block';
-      document.getElementById('update-button-text').textContent = 'Updates Available!';
-    } else {
-      document.getElementById('update-button').style.display = 'none';
-      document.getElementById('update-button-text').textContent = 'Check for Updates';
+    if (updateButtonEl && updateButtonTextEl) {
+      if (data.updates_available) {
+        updateButtonEl.style.display = 'block';
+        updateButtonTextEl.textContent = 'Updates Available!';
+      } else {
+        updateButtonEl.style.display = 'none';
+        updateButtonTextEl.textContent = 'Check for Updates';
+      }
     }
 
     return data;
   } catch (error) {
     console.error('Failed to fetch system info:', error);
-    document.getElementById('system-version').textContent = 'Error loading';
+    const versionEl = document.getElementById('system-version');
+    if (versionEl) versionEl.textContent = 'Error loading';
   }
 }
 
@@ -755,28 +769,46 @@ async function fetchNetworkStatus() {
     const data = await response.json();
 
     if (data.success) {
-      // Show/hide AP section based on mode
+      // Get elements (may not exist on all pages)
       const apSection = document.getElementById('network-ap-section');
-      if (data.ap_mode.available) {
-        // Dual WiFi mode - show AP status
-        if (apSection) apSection.style.display = '';
-        const apStatus = data.ap_mode.enabled ? '✓ Enabled' : 'Disabled';
-        document.getElementById('network-ap-status').textContent = apStatus;
-        document.getElementById('network-ap-ip').textContent = data.ap_mode.ip;
-      } else {
-        // Client-only mode - hide AP section
-        if (apSection) apSection.style.display = 'none';
+      const apStatusEl = document.getElementById('network-ap-status');
+      const apIpEl = document.getElementById('network-ap-ip');
+      const homeStatusEl = document.getElementById('network-home-status');
+      const homeIpEl = document.getElementById('network-home-ip');
+
+      // Show/hide AP section based on mode
+      if (apSection) {
+        if (data.ap_mode.available) {
+          // Dual WiFi mode - show AP status
+          apSection.style.display = '';
+          if (apStatusEl) {
+            const apStatus = data.ap_mode.enabled ? '✓ Enabled' : 'Disabled';
+            apStatusEl.textContent = apStatus;
+          }
+          if (apIpEl) {
+            apIpEl.textContent = data.ap_mode.ip;
+          }
+        } else {
+          // Client-only mode - hide AP section
+          apSection.style.display = 'none';
+        }
       }
 
       // Update home network status
-      const homeStatus = data.home_network.connected ? '✓ Connected' : 'Not connected';
-      document.getElementById('network-home-status').textContent = homeStatus;
+      if (homeStatusEl) {
+        if (data.home_network.connected) {
+          homeStatusEl.textContent = '✓ ' + data.home_network.ssid;
+        } else {
+          homeStatusEl.textContent = 'Not connected';
+        }
+      }
 
-      if (data.home_network.connected) {
-        document.getElementById('network-home-ip').textContent = data.home_network.ip;
-        document.getElementById('network-home-status').textContent = '✓ ' + data.home_network.ssid;
-      } else {
-        document.getElementById('network-home-ip').textContent = '-';
+      if (homeIpEl) {
+        if (data.home_network.connected) {
+          homeIpEl.textContent = data.home_network.ip;
+        } else {
+          homeIpEl.textContent = '-';
+        }
       }
 
       // Show mode description (optional debug info)
@@ -880,11 +912,78 @@ function hideError(elementId) {
   }
 }
 
+// ========== CONNECTION MONITORING ==========
+
+var connectionStatus = {
+  isConnected: true,
+  consecutiveFailures: 0,
+  maxFailures: 2  // Number of failures before marking as disconnected
+};
+
+// Update status indicator in header
+function updateStatusIndicator(connected) {
+  var indicator = document.getElementById('status-indicator');
+  if (!indicator) return;
+
+  if (connected) {
+    indicator.classList.remove('disconnected');
+    indicator.classList.add('connected');
+  } else {
+    indicator.classList.remove('connected');
+    indicator.classList.add('disconnected');
+  }
+}
+
+// Check connection to server
+async function checkConnection() {
+  try {
+    const response = await fetch(`${API_BASE}/status`, {
+      method: 'GET',
+      cache: 'no-cache',
+      signal: AbortSignal.timeout(3000) // 3 second timeout
+    });
+
+    if (response.ok) {
+      // Connection successful
+      connectionStatus.consecutiveFailures = 0;
+      if (!connectionStatus.isConnected) {
+        console.log('✓ Connection restored');
+        connectionStatus.isConnected = true;
+        updateStatusIndicator(true);
+      }
+    } else {
+      throw new Error('Server returned error status');
+    }
+  } catch (error) {
+    // Connection failed
+    connectionStatus.consecutiveFailures++;
+
+    if (connectionStatus.consecutiveFailures >= connectionStatus.maxFailures && connectionStatus.isConnected) {
+      console.error('✗ Connection lost to server');
+      connectionStatus.isConnected = false;
+      updateStatusIndicator(false);
+    }
+  }
+}
+
+// Start monitoring connection
+function startConnectionMonitoring() {
+  // Initial check
+  checkConnection();
+
+  // Check every 3 seconds
+  setInterval(checkConnection, 3000);
+}
+
 // ========== INITIALIZATION ==========
 
 // Initial status fetch and preset generation
 function initialize() {
   console.log('Initializing motor control interface...');
+
+  // Start connection monitoring
+  startConnectionMonitoring();
+
   fetchStepperStatus().then(function() {
     console.log('Stepper status loaded, generating presets...');
     // Generate presets after stepper status is loaded
