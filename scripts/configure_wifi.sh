@@ -42,6 +42,19 @@ echo "Configuring WiFi for SSID: $SSID"
 WPA_CONF="/etc/wpa_supplicant/wpa_supplicant.conf"
 WPA_BACKUP="/etc/wpa_supplicant/wpa_supplicant.conf.backup"
 
+# Create wpa_supplicant.conf if it doesn't exist
+if [ ! -f "$WPA_CONF" ]; then
+    echo "Creating new wpa_supplicant.conf..."
+    mkdir -p /etc/wpa_supplicant
+    cat > "$WPA_CONF" <<'WPAEOF'
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=US
+
+WPAEOF
+    echo "✓ Created wpa_supplicant.conf"
+fi
+
 # Create backup if it doesn't exist
 if [ ! -f "$WPA_BACKUP" ]; then
     echo "Creating backup of wpa_supplicant.conf..."
