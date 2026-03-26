@@ -729,19 +729,22 @@ end
 get '/api/network/status' do
   begin
     # Get wlan1 status (home network interface - USB WiFi adapter)
-    wlan1_status = `iwgetid -i wlan1 -r 2>/dev/null`.strip
+    wlan1_status = `iwgetid wlan1 2>/dev/null | grep -oP 'ESSID:"\\K[^"]+'`.strip
     wlan1_connected = !wlan1_status.empty?
 
     # Get IP addresses
     wlan0_ip = `ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
     wlan1_ip = `ip -4 addr show wlan1 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
 
+    # Get AP SSID from config (handle missing network section)
+    ap_ssid = CONFIG.dig('network', 'ap_ssid') || 'TreadWall-Control'
+
     json({
       success: true,
       ap_mode: {
         enabled: !wlan0_ip.empty?,
         ip: wlan0_ip.empty? ? 'Not configured' : wlan0_ip,
-        ssid: CONFIG['network']['ap_ssid'] || 'TreadWall-Control'
+        ssid: ap_ssid
       },
       home_network: {
         connected: wlan1_connected,
