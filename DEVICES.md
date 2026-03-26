@@ -57,14 +57,14 @@ For each new device:
 
 **Rollback Procedure:**
 1. SSH to device
-2. Stop service: `sudo systemctl stop motor-control.service`
+2. Stop service: `sudo systemctl stop crimp-app.service`
 3. Find backup: `ls -lt /home/pi/treadwall-backup-*`
 4. Restore: `rm -rf /home/pi/treadwall && mv /home/pi/treadwall-backup-YYYYMMDD-HHMMSS /home/pi/treadwall`
-5. Start service: `sudo systemctl start motor-control.service`
+5. Start service: `sudo systemctl start crimp-app.service`
 
 **Health Check:**
-- Service status: `sudo systemctl status motor-control.service`
-- View logs: `sudo journalctl -u motor-control.service -f`
+- Service status: `sudo systemctl status crimp-app.service`
+- View logs: `sudo journalctl -u crimp-app.service -f`
 - Current version: `cd /home/pi/treadwall && git log -1 --oneline`
 
 ## Hardware Configuration

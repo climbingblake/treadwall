@@ -14,7 +14,7 @@ set -e  # Exit on error
 APP_DIR="/home/pi/treadwall"
 BACKUP_DIR="/home/pi/treadwall-backup-$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="/home/pi/treadwall-update.log"
-SERVICE_NAME="motor-control.service"
+SERVICE_NAME="crimp-app.service"
 MAX_BACKUPS=3
 
 # Colors for output (if terminal supports it)

@@ -55,7 +55,7 @@ nano config.json  # Edit device_id and other settings
 
 ### 2. Set Up Systemd Service
 
-Create `/etc/systemd/system/motor-control.service`:
+Create `/etc/systemd/system/crimp-app.service`:
 
 ```ini
 [Unit]
@@ -77,8 +77,8 @@ WantedBy=multi-user.target
 Enable and start:
 
 ```bash
-sudo systemctl enable motor-control.service
-sudo systemctl start motor-control.service
+sudo systemctl enable crimp-app.service
+sudo systemctl start crimp-app.service
 ```
 
 ### 3. Access the Interface
@@ -177,8 +177,8 @@ Access API documentation: `http://<device-ip>:4567/api/status`
 
 ### Service won't start
 ```bash
-sudo systemctl status motor-control.service
-sudo journalctl -u motor-control.service -n 50
+sudo systemctl status crimp-app.service
+sudo journalctl -u crimp-app.service -n 50
 ```
 
 ### Motor not moving
@@ -193,10 +193,10 @@ cat /home/pi/treadwall-update.log
 
 # Manual rollback
 cd /home/pi
-sudo systemctl stop motor-control.service
+sudo systemctl stop crimp-app.service
 rm -rf treadwall
 mv treadwall-backup-YYYYMMDD-HHMMSS treadwall
-sudo systemctl start motor-control.service
+sudo systemctl start crimp-app.service
 ```
 
 ### Can't connect to AP
