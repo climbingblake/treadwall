@@ -23,19 +23,33 @@ async function fetchStepperStatus() {
     const response = await fetch(`${API_BASE}/stepper/status`);
     const data = await response.json();
 
-    document.getElementById('stepper-current-position').textContent = data.current_position;
-    document.getElementById('stepper-increment-display').textContent = data.increment;
-    document.getElementById('stepper-max-position').textContent = data.max_position;
+    // Update UI elements only if they exist
+    const currentPosEl = document.getElementById('stepper-current-position');
+    const incrementDisplayEl = document.getElementById('stepper-increment-display');
+    const maxPosEl = document.getElementById('stepper-max-position');
+    const progressEl = document.getElementById('stepper-progress');
+    const sliderEl = document.getElementById('stepper-slider');
+    const inputEl = document.getElementById('stepper-input');
+
+    if (currentPosEl) currentPosEl.textContent = data.current_position;
+    if (incrementDisplayEl) incrementDisplayEl.textContent = data.increment;
+    if (maxPosEl) maxPosEl.textContent = data.max_position;
 
     // Update slider min/max dynamically
-    document.getElementById('stepper-slider').min = data.min_position;
-    document.getElementById('stepper-slider').max = data.max_position;
-    document.getElementById('stepper-input').min = data.min_position;
-    document.getElementById('stepper-input').max = data.max_position;
+    if (sliderEl) {
+      sliderEl.min = data.min_position;
+      sliderEl.max = data.max_position;
+    }
+    if (inputEl) {
+      inputEl.min = data.min_position;
+      inputEl.max = data.max_position;
+    }
 
-    const range = data.max_position - data.min_position;
-    const progress = range > 0 ? Math.round(((data.current_position - data.min_position) / range) * 100) : 0;
-    document.getElementById('stepper-progress').textContent = progress;
+    if (progressEl) {
+      const range = data.max_position - data.min_position;
+      const progress = range > 0 ? Math.round(((data.current_position - data.min_position) / range) * 100) : 0;
+      progressEl.textContent = progress;
+    }
 
     // Store min/max and increment for preset generation
     window.stepperMinPosition = data.min_position;
@@ -50,7 +64,10 @@ async function fetchStepperStatus() {
 
 // Set stepper position
 async function setStepperPosition() {
-  const position = document.getElementById('stepper-input').value;
+  const inputEl = document.getElementById('stepper-input');
+  if (!inputEl) return;
+
+  const position = inputEl.value;
 
   try {
     const response = await fetch(`${API_BASE}/stepper/${position}`);
@@ -113,8 +130,11 @@ async function setStepperIncrement() {
 
 // Set stepper position directly (for presets)
 function setStepperPositionValue(position) {
-  document.getElementById('stepper-slider').value = position;
-  document.getElementById('stepper-input').value = position;
+  const sliderEl = document.getElementById('stepper-slider');
+  const inputEl = document.getElementById('stepper-input');
+
+  if (sliderEl) sliderEl.value = position;
+  if (inputEl) inputEl.value = position;
   setStepperPosition();
 }
 
@@ -129,8 +149,10 @@ async function resetPosition() {
     if (data.success) {
       await fetchStepperStatus();
       // Update slider and input to reflect new position
-      document.getElementById('stepper-slider').value = 0;
-      document.getElementById('stepper-input').value = 0;
+      const sliderEl = document.getElementById('stepper-slider');
+      const inputEl = document.getElementById('stepper-input');
+      if (sliderEl) sliderEl.value = 0;
+      if (inputEl) inputEl.value = 0;
     } else {
       showError('stepper-error', data.message);
     }
