@@ -3,14 +3,19 @@ var API_BASE = '/api';
 
 // ========== STEPPER FUNCTIONS ==========
 
-// Sync slider and input
-document.getElementById('stepper-slider').addEventListener('input', function(e) {
-  document.getElementById('stepper-input').value = e.target.value;
-});
+// Sync slider and input (only if elements exist)
+var stepperSlider = document.getElementById('stepper-slider');
+var stepperInput = document.getElementById('stepper-input');
 
-document.getElementById('stepper-input').addEventListener('input', function(e) {
-  document.getElementById('stepper-slider').value = e.target.value;
-});
+if (stepperSlider && stepperInput) {
+  stepperSlider.addEventListener('input', function(e) {
+    stepperInput.value = e.target.value;
+  });
+
+  stepperInput.addEventListener('input', function(e) {
+    stepperSlider.value = e.target.value;
+  });
+}
 
 // Fetch and update stepper status
 async function fetchStepperStatus() {
