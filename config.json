@@ -1,4 +1,5 @@
 {
+  "device_id": "TreadWall-001",
   "gpio": {
     "servo_pin": 4,
     "stepper_dir_pin": 5,
@@ -9,5 +10,10 @@
     "max_position": 75000,
     "step_delay": 0.0002,
     "step_increment": 2500
+  },
+  "network": {
+    "ap_ssid": "TreadWall-Control",
+    "ap_password": "climbing2024",
+    "ap_channel": 6
   }
 }

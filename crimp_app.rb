@@ -779,10 +779,12 @@ get '/api/network/status' do
       ap_ip = `ip -4 addr show #{ap_iface} 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
       ap_enabled = !ap_ip.empty?
       ap_ssid = CONFIG.dig('network', 'ap_ssid') || 'TreadWall-Control'
+      ap_password = CONFIG.dig('network', 'ap_password') || 'Not configured'
     else
       ap_ip = nil
       ap_enabled = false
       ap_ssid = nil
+      ap_password = nil
     end
 
     json({
@@ -793,6 +795,7 @@ get '/api/network/status' do
         enabled: ap_enabled,
         ip: ap_enabled ? ap_ip : 'Not configured',
         ssid: ap_ssid || 'N/A',
+        password: ap_password || 'N/A',
         available: !ap_iface.nil?
       },
       home_network: {

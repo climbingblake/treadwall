@@ -773,8 +773,27 @@ async function fetchNetworkStatus() {
       const apSection = document.getElementById('network-ap-section');
       const apStatusEl = document.getElementById('network-ap-status');
       const apIpEl = document.getElementById('network-ap-ip');
+      const apSsidEl = document.getElementById('network-ap-ssid');
+      const apPasswordEl = document.getElementById('network-ap-password');
+      const apCredentialsSection = document.getElementById('ap-credentials-section');
       const homeStatusEl = document.getElementById('network-home-status');
       const homeIpEl = document.getElementById('network-home-ip');
+
+      // Update AP credentials (SSID and Password)
+      if (apSsidEl && apPasswordEl) {
+        if (data.ap_mode.available) {
+          apSsidEl.textContent = data.ap_mode.ssid;
+          apPasswordEl.textContent = data.ap_mode.password;
+          if (apCredentialsSection) {
+            apCredentialsSection.style.display = 'block';
+          }
+        } else {
+          // Hide credentials section if AP not available
+          if (apCredentialsSection) {
+            apCredentialsSection.style.display = 'none';
+          }
+        }
+      }
 
       // Show/hide AP section based on mode
       if (apSection) {

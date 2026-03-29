@@ -463,9 +463,28 @@
       <!-- Network Configuration -->
       <div class="control-section">
         <h2 class="section-title">Network Configuration</h2>
+
+        <!-- Access Point Credentials -->
+        <div class="control-group" id="ap-credentials-section">
+          <label class="control-label">Access Point Credentials</label>
+          <div class="info-box" style="background: var(--bg-primary);">
+            <div class="info-grid">
+              <span>AP Network:</span>
+              <span id="network-ap-ssid" style="font-weight: 600; color: var(--text-primary);">Loading...</span>
+              <span>AP Password:</span>
+              <span id="network-ap-password" style="font-weight: 600; color: var(--text-primary);">Loading...</span>
+            </div>
+            <p class="help-text" style="margin-top: 12px; margin-bottom: 0;">
+              Use these credentials to connect to the Access Point when away from home WiFi
+            </p>
+          </div>
+        </div>
+
+        <!-- Network Status -->
         <div class="control-group">
+          <label class="control-label">Network Status</label>
           <div class="info-box">
-            <div class="info-grid" style="margin-bottom: 16px;">
+            <div class="info-grid">
               <div id="network-ap-section" style="display: contents;">
                 <span>AP Mode:</span>
                 <span id="network-ap-status">Loading...</span>
@@ -477,25 +496,27 @@
               <span>WiFi IP:</span>
               <span id="network-home-ip">-</span>
             </div>
-            <div style="border-top: 1px solid var(--border); padding-top: 16px;">
-              <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
-                Connect to your home WiFi network:
-              </p>
-              <div class="input-group">
-                <label class="input-label">WiFi SSID</label>
-                <input type="text" id="wifi-ssid-input" placeholder="Enter network name">
-              </div>
-              <div class="input-group">
-                <label class="input-label">WiFi Password</label>
-                <input type="password" id="wifi-password-input" placeholder="Enter password">
-              </div>
-              <button class="btn-primary" onclick="configureWifi()" style="width: 100%;">
-                Connect to Network
-              </button>
-              <p id="wifi-config-status" class="status-text">
-                Configuring...
-              </p>
+          </div>
+        </div>
+
+        <!-- WiFi Configuration -->
+        <div class="control-group">
+          <label class="control-label">Connect to Home WiFi</label>
+          <div class="info-box">
+            <div class="input-group">
+              <label class="input-label">WiFi SSID</label>
+              <input type="text" id="wifi-ssid-input" placeholder="Enter network name">
             </div>
+            <div class="input-group">
+              <label class="input-label">WiFi Password</label>
+              <input type="password" id="wifi-password-input" placeholder="Enter password">
+            </div>
+            <button class="btn-primary" onclick="configureWifi()" style="width: 100%;">
+              Connect to Network
+            </button>
+            <p id="wifi-config-status" class="status-text">
+              Configuring...
+            </p>
           </div>
         </div>
       </div>
