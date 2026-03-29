@@ -983,11 +983,17 @@ function updateStatusIndicator(connected) {
 // Check connection to server
 async function checkConnection() {
   try {
-    const response = await fetch(`${API_BASE}/status`, {
+    // Use a Promise race for timeout compatibility with older browsers
+    const fetchPromise = fetch(`${API_BASE}/status`, {
       method: 'GET',
-      cache: 'no-cache',
-      signal: AbortSignal.timeout(3000) // 3 second timeout
+      cache: 'no-cache'
     });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout')), 3000);
+    });
+
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
 
     if (response.ok) {
       // Connection successful
