@@ -70,6 +70,9 @@ end
 # Initialize position from saved state
 $stepper_position = load_position
 
+# Stepper mutex to prevent concurrent motor commands
+$stepper_mutex = Mutex.new
+
 # Global state - Routines
 $routine_thread = nil
 $routine_mutex = Mutex.new
@@ -139,28 +142,31 @@ puts "  - AP Interface: #{$wifi_config[:ap_interface] || 'None'}" if $wifi_confi
 # ========== STEPPER FUNCTIONS ==========
 
 def set_stepper_position(target_position, bypass_limits: false)
-  # Call Python script for precise timing
-  script_path = File.join(File.dirname(__FILE__), 'stepper_control.py')
+  # Prevent concurrent motor commands (Pi Zero can't handle multiple at once)
+  $stepper_mutex.synchronize do
+    # Call Python script for precise timing
+    script_path = File.join(File.dirname(__FILE__), 'stepper_control.py')
 
-  begin
-    # Call Python script with target and current position
-    # Optional bypass_limits flag for calibration (DANGER!)
-    bypass_arg = bypass_limits ? ' true' : ''
-    result = `sudo python3 #{script_path} #{target_position} #{$stepper_position}#{bypass_arg} 2>&1`
-    exit_status = $?.exitstatus
+    begin
+      # Call Python script with target and current position
+      # Optional bypass_limits flag for calibration (DANGER!)
+      bypass_arg = bypass_limits ? ' true' : ''
+      result = `sudo python3 #{script_path} #{target_position} #{$stepper_position}#{bypass_arg} 2>&1`
+      exit_status = $?.exitstatus
 
-    if exit_status == 0
-      # Python script returns the new position
-      $stepper_position = result.strip.to_i
-      save_position  # Persist position after successful movement
-      true
-    else
-      puts "Stepper control error: #{result}"
+      if exit_status == 0
+        # Python script returns the new position
+        $stepper_position = result.strip.to_i
+        save_position  # Persist position after successful movement
+        true
+      else
+        puts "Stepper control error: #{result}"
+        false
+      end
+    rescue => e
+      puts "Error calling stepper script: #{e.message}"
       false
     end
-  rescue => e
-    puts "Error calling stepper script: #{e.message}"
-    false
   end
 end
 

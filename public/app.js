@@ -54,7 +54,7 @@ async function fetchStepperStatus() {
     // Store min/max and increment for preset generation
     window.stepperMinPosition = data.min_position;
     window.stepperMaxPosition = data.max_position;
-    window.stepperIncrement = data.increment;
+    window.stepperIncrementValue = data.increment;  // Renamed to avoid conflict with function
 
     hideError('stepper-error');
   } catch (error) {
@@ -119,7 +119,7 @@ async function setStepperIncrement() {
 
     if (data.success) {
       // Update global increment value
-      window.stepperIncrement = data.increment;
+      window.stepperIncrementValue = data.increment;
       await fetchStepperStatus();
       generateStepperPresets(); // Update presets when increment changes
     }
@@ -200,7 +200,7 @@ async function calibrateDecrement() {
 // Generate preset buttons dynamically from MIN to MAX based on increment
 function generateStepperPresets() {
   // Get increment from stored API value
-  var increment = window.stepperIncrement;
+  var increment = window.stepperIncrementValue;
 
   if (!increment || increment <= 0) {
     console.log('Invalid increment value: ' + increment);
@@ -581,7 +581,7 @@ function startRoutineStatusPolling() {
   if (routinePollingInterval) return;
 
   fetchRoutineStatus(); // Immediate fetch
-  routinePollingInterval = setInterval(fetchRoutineStatus, 500); // Poll every 500ms
+  routinePollingInterval = setInterval(fetchRoutineStatus, 1000); // Poll every 1s (reduced for Pi Zero)
 }
 
 // Stop polling routine status
