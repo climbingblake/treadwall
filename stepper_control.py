@@ -24,10 +24,15 @@ PUL_PIN = CONFIG['gpio']['stepper_pul_pin']
 STEP_DELAY = CONFIG['stepper']['step_delay']
 MIN_POSITION = CONFIG['stepper']['min_position']
 MAX_POSITION = CONFIG['stepper']['max_position']
+REVERSE_DIRECTION = CONFIG['stepper'].get('reverse_direction', False)
 
 def step(steps, direction=True, delay=STEP_DELAY):
     """Execute steps in given direction"""
-    # Direction reversed: HIGH for forward, LOW for backward
+    # Apply direction reversal if configured (for upside-down motor installation)
+    if REVERSE_DIRECTION:
+        direction = not direction
+
+    # Direction: HIGH for forward, LOW for backward
     GPIO.output(DIR_PIN, GPIO.HIGH if direction else GPIO.LOW)
     time.sleep(0.005)  # 5ms for direction change
 

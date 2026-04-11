@@ -766,6 +766,155 @@ get '/api/system/update-log' do
   end
 end
 
+# Get system diagnostics (CPU, memory, processes)
+get '/api/system/diagnostics' do
+  begin
+    # Get CPU and memory info
+    uptime_output = `uptime`.strip
+    load_avg = uptime_output.match(/load average: ([\d.]+), ([\d.]+), ([\d.]+)/)
+
+    # Get memory info
+    mem_info = `free -m`.split("\n")[1].split
+    mem_total = mem_info[1].to_i
+    mem_used = mem_info[2].to_i
+    mem_free = mem_info[3].to_i
+    mem_percent = (mem_used.to_f / mem_total * 100).round(1)
+
+    # Get process count
+    process_count = `ps aux | wc -l`.strip.to_i - 1  # Subtract header
+
+    # Get top CPU processes
+    top_cpu = `ps aux --sort=-%cpu | head -n 6 | tail -n 5`.split("\n").map do |line|
+      parts = line.split
+      {
+        user: parts[0],
+        pid: parts[1],
+        cpu: parts[2],
+        mem: parts[3],
+        command: parts[10..-1].join(' ')
+      }
+    end
+
+    # Get top memory processes
+    top_mem = `ps aux --sort=-%mem | head -n 6 | tail -n 5`.split("\n").map do |line|
+      parts = line.split
+      {
+        user: parts[0],
+        pid: parts[1],
+        cpu: parts[2],
+        mem: parts[3],
+        command: parts[10..-1].join(' ')
+      }
+    end
+
+    # Check for zombie/defunct processes
+    zombie_count = `ps aux | grep defunct | grep -v grep | wc -l`.strip.to_i
+
+    # Check SSH daemon status
+    ssh_status = `systemctl is-active ssh 2>/dev/null`.strip
+    ssh_enabled = `systemctl is-enabled ssh 2>/dev/null`.strip
+
+    json({
+      success: true,
+      load_average: {
+        one_min: load_avg ? load_avg[1].to_f : nil,
+        five_min: load_avg ? load_avg[2].to_f : nil,
+        fifteen_min: load_avg ? load_avg[3].to_f : nil
+      },
+      memory: {
+        total_mb: mem_total,
+        used_mb: mem_used,
+        free_mb: mem_free,
+        used_percent: mem_percent
+      },
+      processes: {
+        total: process_count,
+        zombie: zombie_count,
+        top_cpu: top_cpu,
+        top_memory: top_mem
+      },
+      ssh: {
+        status: ssh_status,
+        enabled: ssh_enabled
+      }
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Failed to get diagnostics: #{e.message}"
+    })
+  end
+end
+
+# Restart SSH service (emergency recovery)
+post '/api/system/restart-ssh' do
+  begin
+    result = `sudo systemctl restart ssh 2>&1`
+    exit_status = $?.exitstatus
+
+    if exit_status == 0
+      json({
+        success: true,
+        message: 'SSH service restarted successfully'
+      })
+    else
+      status 500
+      json({
+        success: false,
+        message: "Failed to restart SSH: #{result}"
+      })
+    end
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Error restarting SSH: #{e.message}"
+    })
+  end
+end
+
+# Clean up zombie processes and free resources
+post '/api/system/cleanup' do
+  begin
+    cleanup_log = []
+
+    # Kill zombie python processes (if any)
+    python_zombies = `ps aux | grep 'python.*defunct' | grep -v grep | awk '{print $2}'`.split("\n")
+    if python_zombies.any?
+      python_zombies.each do |pid|
+        `sudo kill -9 #{pid} 2>/dev/null`
+        cleanup_log << "Killed zombie process #{pid}"
+      end
+    end
+
+    # Clear system caches (safe operation)
+    `sudo sync`
+    cleanup_log << "Synced filesystem"
+
+    # Get memory stats before and after
+    mem_before = `free -m | grep Mem | awk '{print $3}'`.strip.to_i
+    `sudo sh -c 'echo 1 > /proc/sys/vm/drop_caches' 2>/dev/null`
+    sleep 1
+    mem_after = `free -m | grep Mem | awk '{print $3}'`.strip.to_i
+    freed = mem_before - mem_after
+    cleanup_log << "Cleared caches, freed #{freed}MB" if freed > 0
+
+    json({
+      success: true,
+      message: 'System cleanup completed',
+      actions: cleanup_log,
+      recommendation: 'SSH should be more responsive now. Try restarting SSH if still having issues.'
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Cleanup failed: #{e.message}"
+    })
+  end
+end
+
 # ========== NETWORK ENDPOINTS ==========
 
 # Get network status
