@@ -327,6 +327,8 @@ get '/api/status' do
         increment: '/api/stepper/increment',
         decrement: '/api/stepper/decrement',
         set_increment: '/api/stepper/settings/increment/<value>',
+        set_min_position: 'POST /api/stepper/settings/min-position (body: {value: int})',
+        set_max_position: 'POST /api/stepper/settings/max-position (body: {value: int})',
         reset: 'POST /api/stepper/reset',
         calibrate_increment: 'POST /api/stepper/calibrate/increment',
         calibrate_decrement: 'POST /api/stepper/calibrate/decrement',
@@ -386,6 +388,90 @@ get '/api/stepper/settings/increment/:value' do
     success: true,
     increment: $stepper_increment
   })
+end
+
+# Update min position setting
+post '/api/stepper/settings/min-position' do
+  begin
+    # Parse JSON request body
+    request.body.rewind
+    body = request.body.read
+    data = JSON.parse(body)
+    value = data['value'].to_i
+
+    # Validate: min must be less than max
+    if value >= MAX_POSITION
+      status 400
+      return json({
+        success: false,
+        message: "Min position must be less than max position (#{MAX_POSITION})"
+      })
+    end
+
+    # Update config file
+    config_path = File.join(File.dirname(__FILE__), 'config.json')
+    config = JSON.parse(File.read(config_path))
+    config['stepper']['min_position'] = value
+    File.write(config_path, JSON.pretty_generate(config))
+
+    # Update constant (requires restart to fully apply)
+    Object.send(:remove_const, :MIN_POSITION)
+    Object.const_set(:MIN_POSITION, value)
+
+    json({
+      success: true,
+      min_position: value,
+      message: 'Min position updated. Service restart recommended for full effect.'
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Failed to update min position: #{e.message}"
+    })
+  end
+end
+
+# Update max position setting
+post '/api/stepper/settings/max-position' do
+  begin
+    # Parse JSON request body
+    request.body.rewind
+    body = request.body.read
+    data = JSON.parse(body)
+    value = data['value'].to_i
+
+    # Validate: max must be greater than min
+    if value <= MIN_POSITION
+      status 400
+      return json({
+        success: false,
+        message: "Max position must be greater than min position (#{MIN_POSITION})"
+      })
+    end
+
+    # Update config file
+    config_path = File.join(File.dirname(__FILE__), 'config.json')
+    config = JSON.parse(File.read(config_path))
+    config['stepper']['max_position'] = value
+    File.write(config_path, JSON.pretty_generate(config))
+
+    # Update constant (requires restart to fully apply)
+    Object.send(:remove_const, :MAX_POSITION)
+    Object.const_set(:MAX_POSITION, value)
+
+    json({
+      success: true,
+      max_position: value,
+      message: 'Max position updated. Service restart recommended for full effect.'
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Failed to update max position: #{e.message}"
+    })
+  end
 end
 
 post '/api/stepper/reset' do

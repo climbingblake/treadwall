@@ -6,14 +6,14 @@
     "stepper_pul_pin": 6
   },
   "stepper": {
-    "min_position": 0,
-    "max_position": 75000,
+    "min_position": 10,
+    "max_position": 10000,
     "step_delay": 0.0002,
-    "step_increment": 2500,
+    "step_increment": 1000,
     "reverse_direction": false
   },
   "network": {
-    "ap_ssid": "TreadWall-Control",
+    "ap_ssid": "TreadWall-Touch",
     "ap_password": "yosemite",
     "ap_channel": 6
   }

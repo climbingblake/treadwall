@@ -197,6 +197,92 @@ async function calibrateDecrement() {
   }
 }
 
+// Set minimum position
+async function setMinPosition() {
+  const input = document.getElementById('min-position-input');
+  const statusEl = document.getElementById('position-limits-status');
+
+  if (!input) {
+    console.error('Min position input not found');
+    return;
+  }
+
+  const value = parseInt(input.value);
+
+  try {
+    const response = await fetch(`${API_BASE}/stepper/settings/min-position`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: value })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      if (statusEl) {
+        statusEl.textContent = data.message || 'Min position updated successfully';
+        statusEl.classList.add('show');
+        setTimeout(() => statusEl.classList.remove('show'), 3000);
+      }
+      await fetchStepperStatus();
+    } else {
+      if (statusEl) {
+        statusEl.textContent = data.message || 'Failed to update min position';
+        statusEl.classList.add('show');
+        setTimeout(() => statusEl.classList.remove('show'), 5000);
+      }
+    }
+  } catch (error) {
+    if (statusEl) {
+      statusEl.textContent = 'Failed to update min position';
+      statusEl.classList.add('show');
+      setTimeout(() => statusEl.classList.remove('show'), 5000);
+    }
+  }
+}
+
+// Set maximum position
+async function setMaxPosition() {
+  const input = document.getElementById('max-position-input');
+  const statusEl = document.getElementById('position-limits-status');
+
+  if (!input) {
+    console.error('Max position input not found');
+    return;
+  }
+
+  const value = parseInt(input.value);
+
+  try {
+    const response = await fetch(`${API_BASE}/stepper/settings/max-position`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: value })
+    });
+    const data = await response.json();
+
+    if (data.success) {
+      if (statusEl) {
+        statusEl.textContent = data.message || 'Max position updated successfully';
+        statusEl.classList.add('show');
+        setTimeout(() => statusEl.classList.remove('show'), 3000);
+      }
+      await fetchStepperStatus();
+    } else {
+      if (statusEl) {
+        statusEl.textContent = data.message || 'Failed to update max position';
+        statusEl.classList.add('show');
+        setTimeout(() => statusEl.classList.remove('show'), 5000);
+      }
+    }
+  } catch (error) {
+    if (statusEl) {
+      statusEl.textContent = 'Failed to update max position';
+      statusEl.classList.add('show');
+      setTimeout(() => statusEl.classList.remove('show'), 5000);
+    }
+  }
+}
+
 // Generate preset buttons dynamically from MIN to MAX based on increment
 function generateStepperPresets() {
   // Get increment from stored API value
