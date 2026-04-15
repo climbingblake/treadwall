@@ -541,6 +541,35 @@
             </p>
           </div>
         </div>
+
+        <!-- Network Mode Switcher -->
+        <div class="control-group">
+          <label class="control-label">Network Mode</label>
+          <div class="info-box">
+            <div class="info-grid" style="margin-bottom: 16px;">
+              <span>Current Mode:</span>
+              <span id="current-network-mode" style="font-weight: 600; color: var(--text-primary);">Detecting...</span>
+            </div>
+            <p class="help-text" style="margin-bottom: 16px; text-align: left;">
+              <strong>AP Mode:</strong> Pi creates WiFi access point "TreadWall-Touch" at 192.168.4.1. Internet via USB phone tethering.<br>
+              <strong>Client Mode:</strong> Pi connects to your home WiFi. All devices use home network.
+            </p>
+            <div style="display: flex; gap: 12px;">
+              <button id="switch-to-client-btn" class="btn-secondary" onclick="showClientModeDialog()" style="flex: 1;">
+                Switch to Client Mode
+              </button>
+              <button id="switch-to-ap-btn" class="btn-secondary" onclick="switchToAPMode()" style="flex: 1;">
+                Switch to AP Mode
+              </button>
+            </div>
+            <p class="warning-text">
+              ⚠ System will reboot after switching modes
+            </p>
+            <p id="mode-switch-status" class="status-text">
+              Switching...
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- System Information -->

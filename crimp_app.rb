@@ -1133,6 +1133,88 @@ post '/api/network/configure' do
   end
 end
 
+# Switch network mode (AP <-> Client)
+post '/api/network/switch-mode' do
+  begin
+    # Parse request body
+    request.body.rewind
+    body = request.body.read
+    data = JSON.parse(body)
+
+    mode = data['mode'] # 'ap' or 'client'
+    ssid = data['ssid']
+    password = data['password']
+
+    unless mode && ['ap', 'client'].include?(mode)
+      status 400
+      return json({
+        success: false,
+        message: 'Invalid mode. Must be "ap" or "client"'
+      })
+    end
+
+    # Require WiFi credentials for client mode
+    if mode == 'client' && (ssid.nil? || ssid.empty? || password.nil? || password.empty?)
+      status 400
+      return json({
+        success: false,
+        message: 'WiFi credentials required for client mode'
+      })
+    end
+
+    # Call mode switcher script
+    app_dir = File.dirname(__FILE__)
+    switch_script = File.join(app_dir, 'scripts', 'switch_network_mode.sh')
+
+    unless File.exist?(switch_script)
+      status 500
+      return json({
+        success: false,
+        message: 'Mode switcher script not found'
+      })
+    end
+
+    # Build command
+    if mode == 'client'
+      cmd = "sudo #{switch_script} client \"#{ssid}\" \"#{password}\" 2>&1"
+    else
+      cmd = "sudo #{switch_script} ap 2>&1"
+    end
+
+    # Run in background thread to avoid blocking
+    Thread.new do
+      begin
+        sleep 1 # Give time for response to be sent
+        system(cmd)
+        # Script will trigger reboot
+      rescue => e
+        puts "Mode switch error: #{e.message}"
+      end
+    end
+
+    # Return success immediately
+    json({
+      success: true,
+      mode: mode,
+      message: "Switching to #{mode} mode. System will reboot in a few seconds...",
+      note: mode == 'ap' ? 'After reboot, connect to WiFi: TreadWall-Touch at 192.168.4.1:4567' : "After reboot, connect to WiFi: #{ssid} and access via treadwall.local:4567"
+    })
+
+  rescue JSON::ParserError => e
+    status 400
+    json({
+      success: false,
+      message: 'Invalid JSON in request body'
+    })
+  rescue => e
+    status 500
+    json({
+      success: false,
+      message: "Mode switch error: #{e.message}"
+    })
+  end
+end
+
 # Cleanup on exit
 at_exit do
   begin

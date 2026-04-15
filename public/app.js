@@ -1027,6 +1027,128 @@ async function configureWifi() {
   }
 }
 
+// Detect and update current network mode
+async function updateNetworkMode() {
+  try {
+    const response = await fetch(`${API_BASE}/network/status`);
+    const data = await response.json();
+
+    const modeEl = document.getElementById('current-network-mode');
+    const switchToClientBtn = document.getElementById('switch-to-client-btn');
+    const switchToAPBtn = document.getElementById('switch-to-ap-btn');
+
+    if (!modeEl) return;
+
+    // Detect mode based on AP availability
+    let currentMode = 'client';
+    if (data.ap_mode && data.ap_mode.enabled) {
+      currentMode = 'ap';
+    }
+
+    // Update UI
+    if (currentMode === 'ap') {
+      modeEl.textContent = 'AP Mode (WiFi Access Point)';
+      modeEl.style.color = '#3b82f6';
+      if (switchToClientBtn) switchToClientBtn.style.display = 'block';
+      if (switchToAPBtn) switchToAPBtn.style.display = 'none';
+    } else {
+      modeEl.textContent = 'Client Mode (Home WiFi)';
+      modeEl.style.color = '#10b981';
+      if (switchToClientBtn) switchToClientBtn.style.display = 'none';
+      if (switchToAPBtn) switchToAPBtn.style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Failed to detect network mode:', error);
+  }
+}
+
+// Show dialog for client mode (requires WiFi credentials)
+function showClientModeDialog() {
+  const ssid = prompt('Enter your home WiFi network name (SSID):');
+  if (!ssid) return;
+
+  const password = prompt('Enter your home WiFi password:');
+  if (!password) return;
+
+  if (confirm('Switch to Client Mode?\n\nThe system will reboot and connect to: ' + ssid + '\n\nAfter reboot, access via: http://treadwall.local:4567')) {
+    switchNetworkMode('client', ssid, password);
+  }
+}
+
+// Switch to AP mode
+function switchToAPMode() {
+  if (confirm('Switch to AP Mode?\n\nThe system will reboot and create WiFi access point "TreadWall-Touch"\n\nAfter reboot, connect to WiFi and access at: http://192.168.4.1:4567')) {
+    switchNetworkMode('ap');
+  }
+}
+
+// Switch network mode API call
+async function switchNetworkMode(mode, ssid, password) {
+  const statusText = document.getElementById('mode-switch-status');
+  const switchToClientBtn = document.getElementById('switch-to-client-btn');
+  const switchToAPBtn = document.getElementById('switch-to-ap-btn');
+
+  // Disable buttons
+  if (switchToClientBtn) switchToClientBtn.disabled = true;
+  if (switchToAPBtn) switchToAPBtn.disabled = true;
+
+  // Show loading state
+  if (statusText) {
+    statusText.textContent = 'Switching to ' + mode + ' mode...';
+    statusText.style.color = 'var(--text-tertiary)';
+    statusText.style.display = 'block';
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/network/switch-mode`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        mode: mode,
+        ssid: ssid || '',
+        password: password || ''
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      if (statusText) {
+        statusText.textContent = '✓ ' + data.message;
+        statusText.style.color = '#10b981';
+      }
+
+      // Show reboot message
+      setTimeout(() => {
+        if (statusText) {
+          statusText.textContent = '⏳ System rebooting... Please reconnect after 30 seconds.';
+        }
+      }, 2000);
+
+    } else {
+      if (statusText) {
+        statusText.textContent = '✗ Failed: ' + data.message;
+        statusText.style.color = '#ef4444';
+      }
+      // Re-enable buttons on error
+      if (switchToClientBtn) switchToClientBtn.disabled = false;
+      if (switchToAPBtn) switchToAPBtn.disabled = false;
+    }
+
+  } catch (error) {
+    if (statusText) {
+      statusText.textContent = '✗ Failed to switch mode';
+      statusText.style.color = '#ef4444';
+    }
+    console.error(error);
+    // Re-enable buttons on error
+    if (switchToClientBtn) switchToClientBtn.disabled = false;
+    if (switchToAPBtn) switchToAPBtn.disabled = false;
+  }
+}
+
 // ========== UTILITY FUNCTIONS ==========
 
 function showError(elementId, message) {
@@ -1140,6 +1262,7 @@ function initialize() {
 
   // Load network status
   fetchNetworkStatus();
+  updateNetworkMode();
 
   // Initialize button states
   console.log('Initializing routine control buttons...');
