@@ -21,13 +21,21 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Detect current mode
 detect_current_mode() {
-    # Check if wlan0 has static IP 192.168.4.1 (AP mode)
-    if ip addr show wlan0 2>/dev/null | grep -q "192.168.4.1"; then
+    # Check actual wlan0 IP address (most reliable)
+    if ip addr show wlan0 2>/dev/null | grep -q "inet 192.168.4.1"; then
+        # Has AP IP - definitely in AP mode
         echo "ap"
-    # Check if hostapd service is active
-    elif systemctl is-active hostapd >/dev/null 2>&1; then
+    elif ip addr show wlan0 2>/dev/null | grep -qE "inet (10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.[^4])"; then
+        # Has a different private IP - definitely in client mode
+        echo "client"
+    elif iwgetid -r 2>/dev/null | grep -q "."; then
+        # Connected to a WiFi network - client mode
+        echo "client"
+    elif systemctl is-active hostapd >/dev/null 2>&1 && ! pgrep wpa_supplicant >/dev/null; then
+        # hostapd active and wpa_supplicant NOT running - probably AP mode
         echo "ap"
     else
+        # Default to client mode if unclear
         echo "client"
     fi
 }
