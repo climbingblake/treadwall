@@ -588,7 +588,7 @@
       font-size: 12px;
     }
     @media (max-width: 768px) {
-      .container { padding: 0 16px; }
+      .container { padding: 0 12px; }
       header { padding: 12px 0; }
       header .logo { font-size: 18px; }
       header nav { gap: 8px; }
@@ -602,15 +602,23 @@
         font-size: 13px;
       }
       h1 { font-size: 28px; }
-      .controls-grid { grid-template-columns: 1fr; gap: 32px; }
-      .status-grid { grid-template-columns: 1fr; }
+      .controls-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .status-grid {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 16px;
+      }
       .preset-buttons { grid-template-columns: repeat(3, 1fr); }
       #stepper-presets { grid-template-columns: repeat(3, 1fr); }
       .control-section {
-        padding: 20px;
+        padding: 16px;
         margin: 0;
         border-radius: 12px;
       }
+      main { padding: 20px 0; }
     }
 
     /* Header toggle button styles - optimized for touchscreen */
