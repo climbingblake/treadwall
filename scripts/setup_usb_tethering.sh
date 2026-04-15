@@ -315,22 +315,34 @@ echo "  ✓ Installed ${BRIDGE_SCRIPT}"
 
 # 10. Disable wpa_supplicant (conflicts with AP mode)
 echo ""
-echo "Step 10: Disabling wpa_supplicant..."
+echo "Step 10: Aggressively disabling wpa_supplicant..."
 
-# Stop and disable wpa_supplicant service
+# Stop all wpa_supplicant processes
 systemctl stop wpa_supplicant 2>/dev/null || true
-systemctl disable wpa_supplicant 2>/dev/null || true
 killall wpa_supplicant 2>/dev/null || true
 
-# Rename wpa_supplicant.conf so it doesn't auto-connect on boot
+# MASK the service (prevents it from being started by other services)
+systemctl mask wpa_supplicant 2>/dev/null || true
+echo "  ✓ Masked wpa_supplicant service"
+
+# Also mask wpa_supplicant@wlan0 if it exists
+systemctl mask wpa_supplicant@wlan0 2>/dev/null || true
+
+# Rename wpa_supplicant.conf so it can't be used
 if [ -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
     mv /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf.disabled 2>/dev/null || true
-    echo "  ✓ Disabled wpa_supplicant and backed up config"
-else
-    echo "  ℹ No wpa_supplicant.conf found"
+    echo "  ✓ Disabled wpa_supplicant.conf"
 fi
 
-echo "  ✓ wpa_supplicant disabled (AP mode requires exclusive wlan0 access)"
+# Create a dummy config to prevent dhcpcd from starting wpa_supplicant
+cat > /etc/wpa_supplicant/wpa_supplicant.conf <<EOF
+# This file is intentionally empty - AP mode active
+# wpa_supplicant is disabled in favor of hostapd
+# To restore WiFi client mode, use revert_to_client.sh
+EOF
+chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
+
+echo "  ✓ wpa_supplicant completely disabled (AP mode requires exclusive wlan0 access)"
 
 # 11. Enable services
 echo ""

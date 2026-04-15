@@ -16,12 +16,13 @@ echo "Forcing AP Mode"
 echo "=========================================="
 echo ""
 
-# 1. Stop and disable wpa_supplicant
-echo "Step 1: Disabling wpa_supplicant..."
+# 1. Stop and mask wpa_supplicant
+echo "Step 1: Masking wpa_supplicant..."
 systemctl stop wpa_supplicant 2>/dev/null || true
-systemctl disable wpa_supplicant 2>/dev/null || true
 killall wpa_supplicant 2>/dev/null || true
-echo "✓ wpa_supplicant stopped"
+systemctl mask wpa_supplicant 2>/dev/null || true
+systemctl mask wpa_supplicant@wlan0 2>/dev/null || true
+echo "✓ wpa_supplicant stopped and masked"
 echo ""
 
 # 2. Bring down wlan0 and flush addresses

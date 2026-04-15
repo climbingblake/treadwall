@@ -96,9 +96,11 @@ EOF
 chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 echo "✓ wpa_supplicant configured"
 
-# Re-enable wpa_supplicant service (may have been disabled in AP mode)
+# Re-enable wpa_supplicant service (may have been masked in AP mode)
+systemctl unmask wpa_supplicant 2>/dev/null || true
+systemctl unmask wpa_supplicant@wlan0 2>/dev/null || true
 systemctl enable wpa_supplicant 2>/dev/null || true
-echo "✓ wpa_supplicant service enabled"
+echo "✓ wpa_supplicant service unmasked and enabled"
 
 echo ""
 echo "Step 6: Starting WiFi client..."
