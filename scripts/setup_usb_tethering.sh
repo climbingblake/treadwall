@@ -313,9 +313,28 @@ BRIDGE_EOF
 chmod +x "${BRIDGE_SCRIPT}"
 echo "  ✓ Installed ${BRIDGE_SCRIPT}"
 
-# 10. Enable services
+# 10. Disable wpa_supplicant (conflicts with AP mode)
 echo ""
-echo "Step 10: Enabling services..."
+echo "Step 10: Disabling wpa_supplicant..."
+
+# Stop and disable wpa_supplicant service
+systemctl stop wpa_supplicant 2>/dev/null || true
+systemctl disable wpa_supplicant 2>/dev/null || true
+killall wpa_supplicant 2>/dev/null || true
+
+# Rename wpa_supplicant.conf so it doesn't auto-connect on boot
+if [ -f /etc/wpa_supplicant/wpa_supplicant.conf ]; then
+    mv /etc/wpa_supplicant/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf.disabled 2>/dev/null || true
+    echo "  ✓ Disabled wpa_supplicant and backed up config"
+else
+    echo "  ℹ No wpa_supplicant.conf found"
+fi
+
+echo "  ✓ wpa_supplicant disabled (AP mode requires exclusive wlan0 access)"
+
+# 11. Enable services
+echo ""
+echo "Step 11: Enabling services..."
 
 systemctl unmask hostapd
 systemctl enable hostapd
@@ -326,7 +345,7 @@ echo "  ✓ Enabled hostapd"
 echo "  ✓ Enabled dnsmasq"
 echo "  ✓ Enabled usb-tethering service"
 
-# 11. Summary
+# 12. Summary
 echo ""
 echo "=========================================="
 echo "✓ USB Tethering Setup Complete!"

@@ -74,6 +74,12 @@ echo ""
 echo "Step 5: Creating wpa_supplicant configuration..."
 mkdir -p /etc/wpa_supplicant
 
+# Check if there's a disabled config from AP mode
+if [ -f /etc/wpa_supplicant/wpa_supplicant.conf.disabled ]; then
+    echo "  ℹ Found disabled wpa_supplicant config, will create new one"
+    rm -f /etc/wpa_supplicant/wpa_supplicant.conf.disabled
+fi
+
 PSK=$(wpa_passphrase "$HOME_SSID" "$HOME_PASSWORD" | grep 'psk=' | grep -v '#' | cut -d'=' -f2)
 
 cat > /etc/wpa_supplicant/wpa_supplicant.conf <<EOF
@@ -89,6 +95,10 @@ EOF
 
 chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf
 echo "✓ wpa_supplicant configured"
+
+# Re-enable wpa_supplicant service (may have been disabled in AP mode)
+systemctl enable wpa_supplicant 2>/dev/null || true
+echo "✓ wpa_supplicant service enabled"
 
 echo ""
 echo "Step 6: Starting WiFi client..."
