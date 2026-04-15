@@ -49,10 +49,19 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Backup files before modification
-BOOT_CONFIG="/boot/config.txt"
-BOOT_CMDLINE="/boot/cmdline.txt"
+# Detect boot partition location (newer Pi OS uses /boot/firmware)
+if [ -f "/boot/firmware/config.txt" ]; then
+    BOOT_DIR="/boot/firmware"
+    echo "✓ Detected boot partition: /boot/firmware (newer Pi OS)"
+else
+    BOOT_DIR="/boot"
+    echo "✓ Detected boot partition: /boot (older Pi OS)"
+fi
 
+BOOT_CONFIG="${BOOT_DIR}/config.txt"
+BOOT_CMDLINE="${BOOT_DIR}/cmdline.txt"
+
+# Backup files before modification
 if [ ! -f "${BOOT_CONFIG}.backup" ]; then
     echo "✓ Backing up ${BOOT_CONFIG}"
     cp "${BOOT_CONFIG}" "${BOOT_CONFIG}.backup"
