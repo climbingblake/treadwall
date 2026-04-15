@@ -1028,6 +1028,16 @@ get '/api/network/status' do
       ap_password = nil
     end
 
+    # Check for USB tethering (usb0 interface)
+    usb_tethering_active = system('ip link show usb0 >/dev/null 2>&1')
+    if usb_tethering_active
+      usb_ip = `ip -4 addr show usb0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+      usb_has_ip = !usb_ip.empty?
+    else
+      usb_ip = nil
+      usb_has_ip = false
+    end
+
     json({
       success: true,
       mode: $wifi_config[:mode],
@@ -1043,6 +1053,11 @@ get '/api/network/status' do
         connected: client_connected,
         ssid: client_connected ? client_ssid : 'Not connected',
         ip: client_connected ? client_ip : 'Not connected'
+      },
+      usb_tethering: {
+        active: usb_tethering_active && usb_has_ip,
+        ip: usb_has_ip ? usb_ip : 'Not connected',
+        interface: 'usb0'
       }
     })
   rescue => e
