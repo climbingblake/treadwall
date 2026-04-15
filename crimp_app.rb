@@ -115,10 +115,16 @@ def detect_network_mode
   wlan0_ip = `ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
   wlan0_connected = !wlan0_ip.empty?
 
-  # Check if usb0 interface exists and has IP
+  # Check if usb0 or eth0 interface exists and has IP (Android uses usb0, iOS uses eth0)
   usb0_exists = system('ip link show usb0 >/dev/null 2>&1')
+  eth0_exists = system('ip link show eth0 >/dev/null 2>&1')
+
   usb0_ip = `ip -4 addr show usb0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip if usb0_exists
+  eth0_ip = `ip -4 addr show eth0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip if eth0_exists
+
   usb0_connected = usb0_exists && !usb0_ip.to_s.empty?
+  eth0_connected = eth0_exists && !eth0_ip.to_s.empty?
+  usb_connected = usb0_connected || eth0_connected
 
   if wlan0_connected
     {
@@ -127,11 +133,14 @@ def detect_network_mode
       ip: wlan0_ip,
       description: 'WiFi Client Mode'
     }
-  elsif usb0_connected
+  elsif usb_connected
+    # Prefer usb0 if both exist (shouldn't happen, but just in case)
+    interface = usb0_connected ? 'usb0' : 'eth0'
+    ip = usb0_connected ? usb0_ip : eth0_ip
     {
       mode: 'usb_fallback',
-      interface: 'usb0',
-      ip: usb0_ip,
+      interface: interface,
+      ip: ip,
       description: 'USB Tethering Mode (fallback)'
     }
   else
