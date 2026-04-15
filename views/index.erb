@@ -588,7 +588,7 @@
       font-size: 12px;
     }
     @media (max-width: 768px) {
-      .container { padding: 0 20px; }
+      .container { padding: 0 16px; }
       header { padding: 12px 0; }
       header .logo { font-size: 18px; }
       header nav { gap: 8px; }
@@ -606,7 +606,11 @@
       .status-grid { grid-template-columns: 1fr; }
       .preset-buttons { grid-template-columns: repeat(3, 1fr); }
       #stepper-presets { grid-template-columns: repeat(3, 1fr); }
-      .control-section { padding: 24px; }
+      .control-section {
+        padding: 20px;
+        margin: 0;
+        border-radius: 12px;
+      }
     }
 
     /* Header toggle button styles - optimized for touchscreen */
