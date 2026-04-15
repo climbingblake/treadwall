@@ -611,9 +611,9 @@
 
     /* Header toggle button styles - optimized for touchscreen */
     .header-toggle {
-      padding: 12px 20px;
+      padding: 2px 20px;
       min-width: 180px;
-      min-height: 48px;
+      min-height: 28px;
       background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
       border: none;
       border-radius: 8px;
@@ -890,7 +890,6 @@
       <div class="header-left">
         <div class="status-indicator connected" id="status-indicator"></div>
         <a href="/" class="logo">C.R.I.M.P</a>
-        <span class="dim">Climbing Routine Interactive Motor Platform</span>
       </div>
       <nav>
         <button class="header-toggle" onclick="toggleMotor()">
@@ -899,6 +898,9 @@
 
       </nav>
     </div>
+    <div class="container">
+        <span class="dim">Climbing Routine Interactive Motor Platform</span>
+      </div>
   </header>
 
   <main class="container">
