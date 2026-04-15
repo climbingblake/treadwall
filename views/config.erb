@@ -487,87 +487,55 @@
       <div class="control-section">
         <h2 class="section-title">Network Configuration</h2>
 
-        <!-- Access Point Credentials -->
-        <div class="control-group" id="ap-credentials-section">
-          <label class="control-label">Access Point Credentials</label>
-          <div class="info-box" style="background: var(--bg-primary);">
-            <div class="info-grid">
-              <span>AP Network:</span>
-              <span id="network-ap-ssid" style="font-weight: 600; color: var(--text-primary);">Loading...</span>
-              <span>AP Password:</span>
-              <span id="network-ap-password" style="font-weight: 600; color: var(--text-primary);">Loading...</span>
-            </div>
-            <p class="help-text" style="margin-top: 12px; margin-bottom: 0;">
-              Use these credentials to connect to the Access Point when away from home WiFi
-            </p>
-          </div>
-        </div>
-
         <!-- Network Status -->
         <div class="control-group">
-          <label class="control-label">Network Status</label>
+          <label class="control-label">Connection Status</label>
           <div class="info-box">
             <div class="info-grid">
-              <div id="network-ap-section" style="display: contents;">
-                <span>AP Mode:</span>
-                <span id="network-ap-status">Loading...</span>
-                <span>AP IP:</span>
-                <span id="network-ap-ip">-</span>
-              </div>
-              <span>WiFi Network:</span>
-              <span id="network-home-status">-</span>
-              <span>WiFi IP:</span>
-              <span id="network-home-ip">-</span>
+              <span>Mode:</span>
+              <span id="network-mode-desc" style="font-weight: 600; color: var(--text-primary);">Loading...</span>
+              <span>IP Address:</span>
+              <span id="network-ip" style="font-weight: 600; color: var(--text-primary);">-</span>
+              <span>Interface:</span>
+              <span id="network-interface">-</span>
+              <span>Internet:</span>
+              <span id="network-internet">-</span>
             </div>
+            <p class="help-text" style="margin-top: 12px; margin-bottom: 0; text-align: left;">
+              <strong>WiFi Client Mode:</strong> Connected to home WiFi network<br>
+              <strong>USB Tethering Mode:</strong> Connected via USB to phone (fallback when WiFi unavailable)
+            </p>
           </div>
         </div>
 
         <!-- WiFi Configuration -->
         <div class="control-group">
-          <label class="control-label">Connect to Home WiFi</label>
+          <label class="control-label">WiFi Credentials</label>
           <div class="info-box">
+            <div class="info-grid" style="margin-bottom: 16px;">
+              <span>Configured SSID:</span>
+              <span id="wifi-configured-ssid" style="font-weight: 600; color: var(--text-primary);">Not configured</span>
+              <span>Current WiFi:</span>
+              <span id="wifi-current-ssid">Not connected</span>
+              <span>Signal:</span>
+              <span id="wifi-signal">-</span>
+            </div>
             <div class="input-group">
               <label class="input-label">WiFi SSID</label>
-              <input type="text" id="wifi-ssid-input" placeholder="Enter network name">
+              <input type="text" id="wifi-ssid-input" placeholder="Enter network name (e.g., Farmhouse)">
             </div>
             <div class="input-group">
               <label class="input-label">WiFi Password</label>
               <input type="password" id="wifi-password-input" placeholder="Enter password">
             </div>
-            <button class="btn-primary" onclick="configureWifi()" style="width: 100%;">
-              Connect to Network
+            <button class="btn-primary" onclick="updateWifiCredentials()" style="width: 100%;">
+              Update WiFi Credentials
             </button>
+            <p class="help-text" style="margin-top: 8px; margin-bottom: 0;">
+              After updating, Pi will attempt to connect. If connection fails, USB access remains available.
+            </p>
             <p id="wifi-config-status" class="status-text">
-              Configuring...
-            </p>
-          </div>
-        </div>
-
-        <!-- Network Mode Switcher -->
-        <div class="control-group">
-          <label class="control-label">Network Mode</label>
-          <div class="info-box">
-            <div class="info-grid" style="margin-bottom: 16px;">
-              <span>Current Mode:</span>
-              <span id="current-network-mode" style="font-weight: 600; color: var(--text-primary);">Detecting...</span>
-            </div>
-            <p class="help-text" style="margin-bottom: 16px; text-align: left;">
-              <strong>AP Mode:</strong> Pi creates WiFi access point "TreadWall-Touch" at 192.168.4.1. Internet via USB phone tethering.<br>
-              <strong>Client Mode:</strong> Pi connects to your home WiFi. All devices use home network.
-            </p>
-            <div style="display: flex; gap: 12px;">
-              <button id="switch-to-client-btn" class="btn-secondary" onclick="showClientModeDialog()" style="flex: 1;">
-                Switch to Client Mode
-              </button>
-              <button id="switch-to-ap-btn" class="btn-secondary" onclick="switchToAPMode()" style="flex: 1;">
-                Switch to AP Mode
-              </button>
-            </div>
-            <p class="warning-text">
-              ⚠ System will reboot after switching modes
-            </p>
-            <p id="mode-switch-status" class="status-text">
-              Switching...
+              Updating...
             </p>
           </div>
         </div>

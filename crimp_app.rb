@@ -109,35 +109,46 @@ puts "✓ Loaded #{$routines.length} training routines"
 
 # ========== NETWORK INTERFACE DETECTION ==========
 
-# Detect WiFi deployment mode and interfaces
-def detect_wifi_config
-  # Check if wlan1 (USB WiFi adapter) exists
-  wlan1_exists = system('ip link show wlan1 >/dev/null 2>&1')
+# Detect current network mode (WiFi client or USB fallback)
+def detect_network_mode
+  # Check if wlan0 has an IP (connected to WiFi)
+  wlan0_ip = `ip -4 addr show wlan0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
+  wlan0_connected = !wlan0_ip.empty?
 
-  if wlan1_exists
-    # Dual-WiFi mode: wlan0 = AP, wlan1 = home WiFi client
+  # Check if usb0 interface exists and has IP
+  usb0_exists = system('ip link show usb0 >/dev/null 2>&1')
+  usb0_ip = `ip -4 addr show usb0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip if usb0_exists
+  usb0_connected = usb0_exists && !usb0_ip.to_s.empty?
+
+  if wlan0_connected
     {
-      mode: 'dual_wifi',
-      ap_interface: 'wlan0',
-      client_interface: 'wlan1',
-      description: 'Dual WiFi (AP + Client)'
+      mode: 'wifi_client',
+      interface: 'wlan0',
+      ip: wlan0_ip,
+      description: 'WiFi Client Mode'
+    }
+  elsif usb0_connected
+    {
+      mode: 'usb_fallback',
+      interface: 'usb0',
+      ip: usb0_ip,
+      description: 'USB Tethering Mode (fallback)'
     }
   else
-    # Client-only mode: wlan0 = home WiFi client, no AP
     {
-      mode: 'client_only',
-      ap_interface: nil,
-      client_interface: 'wlan0',
-      description: 'WiFi Client Only'
+      mode: 'disconnected',
+      interface: nil,
+      ip: nil,
+      description: 'Not connected (waiting for WiFi or USB)'
     }
   end
 end
 
 # Detect configuration at startup
-$wifi_config = detect_wifi_config
-puts "✓ WiFi Mode: #{$wifi_config[:description]}"
-puts "  - Client Interface: #{$wifi_config[:client_interface]}"
-puts "  - AP Interface: #{$wifi_config[:ap_interface] || 'None'}" if $wifi_config[:ap_interface]
+$network_mode = detect_network_mode
+puts "✓ Network Mode: #{$network_mode[:description]}"
+puts "  - Interface: #{$network_mode[:interface] || 'None'}"
+puts "  - IP: #{$network_mode[:ip] || 'None'}"
 
 # ========== STEPPER FUNCTIONS ==========
 
@@ -1006,59 +1017,43 @@ end
 # Get network status
 get '/api/network/status' do
   begin
-    # Use detected WiFi configuration
-    client_iface = $wifi_config[:client_interface]
-    ap_iface = $wifi_config[:ap_interface]
+    # Re-detect current mode (dynamic)
+    current_mode = detect_network_mode
 
-    # Get client interface status
-    client_ssid = `iwgetid #{client_iface} 2>/dev/null | grep -oP 'ESSID:"\\K[^"]+'`.strip
-    client_connected = !client_ssid.empty?
-    client_ip = `ip -4 addr show #{client_iface} 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
-
-    # Get AP interface status (if exists)
-    if ap_iface
-      ap_ip = `ip -4 addr show #{ap_iface} 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
-      ap_enabled = !ap_ip.empty?
-      ap_ssid = CONFIG.dig('network', 'ap_ssid') || 'TreadWall-Control'
-      ap_password = CONFIG.dig('network', 'ap_password') || 'Not configured'
-    else
-      ap_ip = nil
-      ap_enabled = false
-      ap_ssid = nil
-      ap_password = nil
+    # Get WiFi details if connected
+    wifi_ssid = nil
+    wifi_signal = nil
+    if current_mode[:mode] == 'wifi_client'
+      wifi_ssid = `iwgetid wlan0 -r 2>/dev/null`.strip
+      wifi_signal = `iw wlan0 link 2>/dev/null | grep signal | awk '{print $2}'`.strip
     end
 
-    # Check for USB tethering (usb0 interface)
-    usb_tethering_active = system('ip link show usb0 >/dev/null 2>&1')
-    if usb_tethering_active
-      usb_ip = `ip -4 addr show usb0 2>/dev/null | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){3}'`.strip
-      usb_has_ip = !usb_ip.empty?
-    else
-      usb_ip = nil
-      usb_has_ip = false
-    end
+    # Load configured WiFi credentials from config.json
+    config_file = File.join(File.dirname(__FILE__), 'config.json')
+    config = File.exist?(config_file) ? JSON.parse(File.read(config_file)) : {}
+    configured_ssid = config['wifi_ssid'] || 'Not configured'
+
+    # Check internet connectivity (try to ping DNS)
+    has_internet = system('ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1')
 
     json({
       success: true,
-      mode: $wifi_config[:mode],
-      mode_description: $wifi_config[:description],
-      ap_mode: {
-        enabled: ap_enabled,
-        ip: ap_enabled ? ap_ip : 'Not configured',
-        ssid: ap_ssid || 'N/A',
-        password: ap_password || 'N/A',
-        available: !ap_iface.nil?
+      mode: current_mode[:mode],
+      mode_description: current_mode[:description],
+      interface: current_mode[:interface],
+      ip_address: current_mode[:ip] || 'Not assigned',
+      wifi: {
+        connected: current_mode[:mode] == 'wifi_client',
+        ssid: wifi_ssid || 'Not connected',
+        signal: wifi_signal || 'N/A',
+        configured_ssid: configured_ssid
       },
-      home_network: {
-        connected: client_connected,
-        ssid: client_connected ? client_ssid : 'Not connected',
-        ip: client_connected ? client_ip : 'Not connected'
+      usb: {
+        connected: current_mode[:mode] == 'usb_fallback',
+        ip: current_mode[:mode] == 'usb_fallback' ? current_mode[:ip] : 'Not connected'
       },
-      usb_tethering: {
-        active: usb_tethering_active && usb_has_ip,
-        ip: usb_has_ip ? usb_ip : 'Not connected',
-        interface: 'usb0'
-      }
+      internet: has_internet,
+      access_url: current_mode[:ip] ? "http://#{current_mode[:ip]}:4567" : 'http://treadwall.local:4567'
     })
   rescue => e
     status 500
@@ -1080,43 +1075,70 @@ post '/api/network/configure' do
     ssid = data['ssid']
     password = data['password']
 
-    unless ssid && password
+    unless ssid && !ssid.empty?
       status 400
       return json({
         success: false,
-        message: 'Missing ssid or password'
+        message: 'SSID is required'
       })
     end
 
-    # Call configuration script
-    app_dir = File.dirname(__FILE__)
-    config_script = File.join(app_dir, 'scripts', 'configure_wifi.sh')
+    unless password && !password.empty?
+      status 400
+      return json({
+        success: false,
+        message: 'Password is required'
+      })
+    end
 
-    unless File.exist?(config_script)
+    # Generate PSK hash using wpa_passphrase
+    psk_result = `wpa_passphrase "#{ssid}" "#{password}" 2>/dev/null | grep 'psk=' | grep -v '#' | cut -d'=' -f2`.strip
+
+    if psk_result.empty?
       status 500
       return json({
         success: false,
-        message: 'WiFi configuration script not found'
+        message: 'Failed to generate WiFi credentials'
       })
     end
 
-    # Run script with ssid and password as arguments
-    result = `sudo #{config_script} "#{ssid}" "#{password}" 2>&1`
-    exit_status = $?.exitstatus
+    # Update wpa_supplicant.conf
+    wpa_conf = <<~WPA
+      ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+      update_config=1
+      country=US
 
-    if exit_status == 0
-      json({
-        success: true,
-        message: 'WiFi configured successfully. Connecting to network...',
-        note: 'Device will attempt to connect to home network while maintaining AP mode'
-      })
-    else
-      status 500
-      json({
-        success: false,
-        message: "Configuration failed: #{result}"
-      })
+      network={
+          ssid="#{ssid}"
+          psk=#{psk_result}
+      }
+    WPA
+
+    File.write('/tmp/wpa_supplicant.conf', wpa_conf)
+    `sudo mv /tmp/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf`
+    `sudo chmod 600 /etc/wpa_supplicant/wpa_supplicant.conf`
+
+    # Save to config.json
+    app_dir = File.dirname(__FILE__)
+    config_file = File.join(app_dir, 'config.json')
+    config = File.exist?(config_file) ? JSON.parse(File.read(config_file)) : {}
+    config['wifi_ssid'] = ssid
+    config['wifi_password'] = password
+    File.write(config_file, JSON.pretty_generate(config))
+
+    # Restart wpa_supplicant to apply changes (in background)
+    Thread.new do
+      sleep 1
+      system('sudo systemctl restart wpa_supplicant 2>/dev/null')
+      system('sudo systemctl restart dhcpcd 2>/dev/null')
     end
+
+    json({
+      success: true,
+      message: 'WiFi credentials updated. Connecting to network...',
+      ssid: ssid,
+      note: 'Device will attempt to connect. If connection fails, USB access will remain available.'
+    })
 
   rescue JSON::ParserError => e
     status 400
@@ -1133,87 +1155,6 @@ post '/api/network/configure' do
   end
 end
 
-# Switch network mode (AP <-> Client)
-post '/api/network/switch-mode' do
-  begin
-    # Parse request body
-    request.body.rewind
-    body = request.body.read
-    data = JSON.parse(body)
-
-    mode = data['mode'] # 'ap' or 'client'
-    ssid = data['ssid']
-    password = data['password']
-
-    unless mode && ['ap', 'client'].include?(mode)
-      status 400
-      return json({
-        success: false,
-        message: 'Invalid mode. Must be "ap" or "client"'
-      })
-    end
-
-    # Require WiFi credentials for client mode
-    if mode == 'client' && (ssid.nil? || ssid.empty? || password.nil? || password.empty?)
-      status 400
-      return json({
-        success: false,
-        message: 'WiFi credentials required for client mode'
-      })
-    end
-
-    # Call mode switcher script
-    app_dir = File.dirname(__FILE__)
-    switch_script = File.join(app_dir, 'scripts', 'switch_network_mode.sh')
-
-    unless File.exist?(switch_script)
-      status 500
-      return json({
-        success: false,
-        message: 'Mode switcher script not found'
-      })
-    end
-
-    # Build command
-    if mode == 'client'
-      cmd = "sudo #{switch_script} client \"#{ssid}\" \"#{password}\" 2>&1"
-    else
-      cmd = "sudo #{switch_script} ap 2>&1"
-    end
-
-    # Run in background thread to avoid blocking
-    Thread.new do
-      begin
-        sleep 1 # Give time for response to be sent
-        system(cmd)
-        # Script will trigger reboot
-      rescue => e
-        puts "Mode switch error: #{e.message}"
-      end
-    end
-
-    # Return success immediately
-    json({
-      success: true,
-      mode: mode,
-      message: "Switching to #{mode} mode. System will reboot in a few seconds...",
-      note: mode == 'ap' ? 'After reboot, connect to WiFi: TreadWall-Touch at 192.168.4.1:4567' : "After reboot, connect to WiFi: #{ssid} and access via treadwall.local:4567"
-    })
-
-  rescue JSON::ParserError => e
-    status 400
-    json({
-      success: false,
-      message: 'Invalid JSON in request body'
-    })
-  rescue => e
-    status 500
-    json({
-      success: false,
-      message: "Mode switch error: #{e.message}"
-    })
-  end
-end
 
 # Cleanup on exit
 at_exit do

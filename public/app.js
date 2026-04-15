@@ -883,80 +883,83 @@ async function fetchNetworkStatus() {
 
     if (data.success) {
       // Get elements (may not exist on all pages)
-      const apSection = document.getElementById('network-ap-section');
-      const apStatusEl = document.getElementById('network-ap-status');
-      const apIpEl = document.getElementById('network-ap-ip');
-      const apSsidEl = document.getElementById('network-ap-ssid');
-      const apPasswordEl = document.getElementById('network-ap-password');
-      const apCredentialsSection = document.getElementById('ap-credentials-section');
-      const homeStatusEl = document.getElementById('network-home-status');
-      const homeIpEl = document.getElementById('network-home-ip');
+      const modeDescEl = document.getElementById('network-mode-desc');
+      const ipEl = document.getElementById('network-ip');
+      const interfaceEl = document.getElementById('network-interface');
+      const internetEl = document.getElementById('network-internet');
+      const configuredSsidEl = document.getElementById('wifi-configured-ssid');
+      const currentSsidEl = document.getElementById('wifi-current-ssid');
+      const signalEl = document.getElementById('wifi-signal');
 
-      // Update AP credentials (SSID and Password)
-      if (apSsidEl && apPasswordEl) {
-        if (data.ap_mode.available) {
-          apSsidEl.textContent = data.ap_mode.ssid;
-          apPasswordEl.textContent = data.ap_mode.password;
-          if (apCredentialsSection) {
-            apCredentialsSection.style.display = 'block';
-          }
+      // Update mode description
+      if (modeDescEl) {
+        modeDescEl.textContent = data.mode_description;
+        // Color code by mode
+        if (data.mode === 'wifi_client') {
+          modeDescEl.style.color = '#10b981'; // green
+        } else if (data.mode === 'usb_fallback') {
+          modeDescEl.style.color = '#3b82f6'; // blue
         } else {
-          // Hide credentials section if AP not available
-          if (apCredentialsSection) {
-            apCredentialsSection.style.display = 'none';
-          }
+          modeDescEl.style.color = '#ef4444'; // red (disconnected)
         }
       }
 
-      // Show/hide AP section based on mode
-      if (apSection) {
-        if (data.ap_mode.available) {
-          // Dual WiFi mode - show AP status
-          apSection.style.display = '';
-          if (apStatusEl) {
-            const apStatus = data.ap_mode.enabled ? '✓ Enabled' : 'Disabled';
-            apStatusEl.textContent = apStatus;
-          }
-          if (apIpEl) {
-            apIpEl.textContent = data.ap_mode.ip;
-          }
+      // Update IP address
+      if (ipEl) {
+        ipEl.textContent = data.ip_address;
+      }
+
+      // Update interface
+      if (interfaceEl) {
+        interfaceEl.textContent = data.interface || 'None';
+      }
+
+      // Update internet status
+      if (internetEl) {
+        if (data.internet) {
+          internetEl.textContent = '✓ Connected';
+          internetEl.style.color = '#10b981';
         } else {
-          // Client-only mode - hide AP section
-          apSection.style.display = 'none';
+          internetEl.textContent = '✗ No internet';
+          internetEl.style.color = '#ef4444';
         }
       }
 
-      // Update home network status
-      if (homeStatusEl) {
-        if (data.home_network.connected) {
-          homeStatusEl.textContent = '✓ ' + data.home_network.ssid;
+      // Update WiFi details
+      if (configuredSsidEl) {
+        configuredSsidEl.textContent = data.wifi.configured_ssid;
+      }
+
+      if (currentSsidEl) {
+        currentSsidEl.textContent = data.wifi.ssid;
+        if (data.wifi.connected) {
+          currentSsidEl.style.color = '#10b981';
         } else {
-          homeStatusEl.textContent = 'Not connected';
+          currentSsidEl.style.color = 'var(--text-secondary)';
         }
       }
 
-      if (homeIpEl) {
-        if (data.home_network.connected) {
-          homeIpEl.textContent = data.home_network.ip;
-        } else {
-          homeIpEl.textContent = '-';
-        }
+      if (signalEl) {
+        signalEl.textContent = data.wifi.signal;
       }
 
-      // Show mode description (optional debug info)
-      console.log('WiFi Mode:', data.mode_description);
+      // Debug
+      console.log('Network Mode:', data.mode_description);
     }
 
     return data;
   } catch (error) {
     console.error('Failed to fetch network status:', error);
-    const apStatusEl = document.getElementById('network-ap-status');
-    if (apStatusEl) apStatusEl.textContent = 'Error loading';
+    const modeDescEl = document.getElementById('network-mode-desc');
+    if (modeDescEl) {
+      modeDescEl.textContent = 'Error loading';
+      modeDescEl.style.color = '#ef4444';
+    }
   }
 }
 
-// Configure WiFi
-async function configureWifi() {
+// Update WiFi credentials
+async function updateWifiCredentials() {
   const ssid = document.getElementById('wifi-ssid-input').value.trim();
   const password = document.getElementById('wifi-password-input').value;
   const statusText = document.getElementById('wifi-config-status');
@@ -979,7 +982,7 @@ async function configureWifi() {
 
   // Show loading state
   configButton.disabled = true;
-  statusText.textContent = 'Configuring WiFi...';
+  statusText.textContent = 'Updating WiFi credentials...';
   statusText.style.color = 'var(--text-tertiary)';
   statusText.style.display = 'block';
 
@@ -998,7 +1001,7 @@ async function configureWifi() {
     const data = await response.json();
 
     if (data.success) {
-      statusText.textContent = '✓ WiFi configured! Connecting...';
+      statusText.textContent = '✓ WiFi credentials updated! Connecting to ' + ssid + '...';
       statusText.style.color = '#10b981';
 
       // Clear password field for security
@@ -1007,19 +1010,19 @@ async function configureWifi() {
       // Wait a few seconds and refresh network status
       setTimeout(async () => {
         await fetchNetworkStatus();
-        statusText.textContent = '✓ Configuration complete';
+        statusText.textContent = '✓ Configuration complete. Check connection status above.';
         setTimeout(() => {
           statusText.style.display = 'none';
         }, 5000);
-      }, 5000);
+      }, 8000);
 
     } else {
-      statusText.textContent = '✗ Configuration failed: ' + data.message;
+      statusText.textContent = '✗ Failed: ' + data.message;
       statusText.style.color = '#ef4444';
     }
 
   } catch (error) {
-    statusText.textContent = '✗ Failed to configure WiFi';
+    statusText.textContent = '✗ Failed to update WiFi credentials';
     statusText.style.color = '#ef4444';
     console.error(error);
   } finally {
@@ -1027,146 +1030,6 @@ async function configureWifi() {
   }
 }
 
-// Detect and update current network mode
-async function updateNetworkMode() {
-  try {
-    const response = await fetch(`${API_BASE}/network/status`);
-    const data = await response.json();
-
-    const modeEl = document.getElementById('current-network-mode');
-    const switchToClientBtn = document.getElementById('switch-to-client-btn');
-    const switchToAPBtn = document.getElementById('switch-to-ap-btn');
-
-    if (!modeEl) return;
-
-    console.log('Network status data:', data); // Debug
-
-    // Detect mode based on multiple signals
-    let currentMode = 'client';
-
-    // Check if AP is enabled and has an IP
-    if (data.ap_mode && data.ap_mode.enabled && data.ap_mode.ip && data.ap_mode.ip !== 'Not configured') {
-      currentMode = 'ap';
-    }
-    // Fallback: Check if AP is available but home network is not connected
-    else if (data.ap_mode && data.ap_mode.available && !data.home_network.connected) {
-      currentMode = 'ap';
-    }
-    // Explicitly client mode if connected to home network with no AP
-    else if (data.home_network && data.home_network.connected) {
-      currentMode = 'client';
-    }
-
-    console.log('Detected mode:', currentMode); // Debug
-
-    // Update UI
-    if (currentMode === 'ap') {
-      modeEl.textContent = 'AP Mode (WiFi Access Point)';
-      modeEl.style.color = '#3b82f6';
-      if (switchToClientBtn) switchToClientBtn.style.display = 'block';
-      if (switchToAPBtn) switchToAPBtn.style.display = 'none';
-    } else {
-      modeEl.textContent = 'Client Mode (Home WiFi)';
-      modeEl.style.color = '#10b981';
-      if (switchToClientBtn) switchToClientBtn.style.display = 'none';
-      if (switchToAPBtn) switchToAPBtn.style.display = 'block';
-    }
-  } catch (error) {
-    console.error('Failed to detect network mode:', error);
-    const modeEl = document.getElementById('current-network-mode');
-    if (modeEl) {
-      modeEl.textContent = 'Error detecting mode';
-      modeEl.style.color = '#ef4444';
-    }
-  }
-}
-
-// Show dialog for client mode (requires WiFi credentials)
-function showClientModeDialog() {
-  const ssid = prompt('Enter your home WiFi network name (SSID):');
-  if (!ssid) return;
-
-  const password = prompt('Enter your home WiFi password:');
-  if (!password) return;
-
-  if (confirm('Switch to Client Mode?\n\nThe system will reboot and connect to: ' + ssid + '\n\nAfter reboot, access via: http://treadwall.local:4567')) {
-    switchNetworkMode('client', ssid, password);
-  }
-}
-
-// Switch to AP mode
-function switchToAPMode() {
-  if (confirm('Switch to AP Mode?\n\nThe system will reboot and create WiFi access point "TreadWall-Touch"\n\nAfter reboot, connect to WiFi and access at: http://192.168.4.1:4567')) {
-    switchNetworkMode('ap');
-  }
-}
-
-// Switch network mode API call
-async function switchNetworkMode(mode, ssid, password) {
-  const statusText = document.getElementById('mode-switch-status');
-  const switchToClientBtn = document.getElementById('switch-to-client-btn');
-  const switchToAPBtn = document.getElementById('switch-to-ap-btn');
-
-  // Disable buttons
-  if (switchToClientBtn) switchToClientBtn.disabled = true;
-  if (switchToAPBtn) switchToAPBtn.disabled = true;
-
-  // Show loading state
-  if (statusText) {
-    statusText.textContent = 'Switching to ' + mode + ' mode...';
-    statusText.style.color = 'var(--text-tertiary)';
-    statusText.style.display = 'block';
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/network/switch-mode`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        mode: mode,
-        ssid: ssid || '',
-        password: password || ''
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      if (statusText) {
-        statusText.textContent = '✓ ' + data.message;
-        statusText.style.color = '#10b981';
-      }
-
-      // Show reboot message
-      setTimeout(() => {
-        if (statusText) {
-          statusText.textContent = '⏳ System rebooting... Please reconnect after 30 seconds.';
-        }
-      }, 2000);
-
-    } else {
-      if (statusText) {
-        statusText.textContent = '✗ Failed: ' + data.message;
-        statusText.style.color = '#ef4444';
-      }
-      // Re-enable buttons on error
-      if (switchToClientBtn) switchToClientBtn.disabled = false;
-      if (switchToAPBtn) switchToAPBtn.disabled = false;
-    }
-
-  } catch (error) {
-    if (statusText) {
-      statusText.textContent = '✗ Failed to switch mode';
-      statusText.style.color = '#ef4444';
-    }
-    console.error(error);
-    // Re-enable buttons on error
-    if (switchToClientBtn) switchToClientBtn.disabled = false;
-    if (switchToAPBtn) switchToAPBtn.disabled = false;
-  }
-}
 
 // ========== UTILITY FUNCTIONS ==========
 
@@ -1281,7 +1144,6 @@ function initialize() {
 
   // Load network status
   fetchNetworkStatus();
-  updateNetworkMode();
 
   // Initialize button states
   console.log('Initializing routine control buttons...');
