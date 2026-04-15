@@ -131,12 +131,14 @@ sed -i 's|^#DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/defaul
 echo ""
 echo "Step 6: Configuring DHCP server..."
 
-# Backup original dnsmasq config
+# Backup original dnsmasq config (if it exists)
 if [ -f /etc/dnsmasq.conf.original ]; then
     echo "  ℹ dnsmasq backup already exists"
-else
+elif [ -f /etc/dnsmasq.conf ]; then
     mv /etc/dnsmasq.conf /etc/dnsmasq.conf.original
     echo "  ✓ Backed up original dnsmasq.conf"
+else
+    echo "  ℹ No existing dnsmasq.conf (will create new one)"
 fi
 
 cat > /etc/dnsmasq.conf <<EOF
