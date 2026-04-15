@@ -1039,11 +1039,25 @@ async function updateNetworkMode() {
 
     if (!modeEl) return;
 
-    // Detect mode based on AP availability
+    console.log('Network status data:', data); // Debug
+
+    // Detect mode based on multiple signals
     let currentMode = 'client';
-    if (data.ap_mode && data.ap_mode.enabled) {
+
+    // Check if AP is enabled and has an IP
+    if (data.ap_mode && data.ap_mode.enabled && data.ap_mode.ip && data.ap_mode.ip !== 'Not configured') {
       currentMode = 'ap';
     }
+    // Fallback: Check if AP is available but home network is not connected
+    else if (data.ap_mode && data.ap_mode.available && !data.home_network.connected) {
+      currentMode = 'ap';
+    }
+    // Explicitly client mode if connected to home network with no AP
+    else if (data.home_network && data.home_network.connected) {
+      currentMode = 'client';
+    }
+
+    console.log('Detected mode:', currentMode); // Debug
 
     // Update UI
     if (currentMode === 'ap') {
@@ -1059,6 +1073,11 @@ async function updateNetworkMode() {
     }
   } catch (error) {
     console.error('Failed to detect network mode:', error);
+    const modeEl = document.getElementById('current-network-mode');
+    if (modeEl) {
+      modeEl.textContent = 'Error detecting mode';
+      modeEl.style.color = '#ef4444';
+    }
   }
 }
 
